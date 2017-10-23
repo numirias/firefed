@@ -1,0 +1,39 @@
+beacon.enabled,false,3,'This is important, because...'
+datareporting.healthreport.service.enabled,false,1,'Don't enable datareporting.'
+datareporting.healthreport.uploadEnabled,false,1,'No upload'
+datareporting.policy.dataSubmissionEnabled,false,1,'No submission'
+browser.newtab.preload,false,1,'No preload'
+browser.newtabpage.enabled,false,1,x
+browser.newtabpage.enhanced,false,1,x
+browser.pocket.enabled,false,1,x
+browser.safebrowsing.downloads.enabled,false,1,x
+browser.safebrowsing.downloads.remote.enabled,false,1,x
+browser.safebrowsing.enabled,false,1,x
+browser.safebrowsing.malware.enabled,false,1,x
+
+browser.urlbar.formatting.enabled,false,1,x
+browser.urlbar.trimURLs,false,1,x
+
+devtools.debugger.remote-enabled,false,1,x
+
+dom.ipc.plugins.flash.subprocess.crashreporter.enabled,false,1,x
+
+experiments.activeExperiment,false,1,x
+
+
+media.gmp-provider.enabled,false,1,x
+media.peerconnection.enabled,false,1,x
+network.dns.disablePrefetch,true,1,x
+network.prefetch-next,false,1,x
+privacy.donottrackheader.enabled,true,1,x
+security.ssl.errorReporting.enabled,false,1,x
+services.sync.enabled,false,1,x
+social.remote-install.enabled,false,1,x
+social.share.activationPanelEnabled,false,1,x
+
+xpinstall.signatures.required,true,1,x
+browser.tabs.crashReporting.sendReport,false,1,x
+dom.ipc.plugins.reportCrashURL,false,1,x
+loop.enabled,false,1,x
+browser.uitour.enabled,false,1,x
+geo.enabled,false,1,x
