@@ -3,7 +3,6 @@ import sqlite3
 
 
 class Feature:
-
     def __init__(self, firefed):
         self.ff = firefed
 
@@ -18,15 +17,17 @@ class Feature:
 
 
 class SqliteTableFeature:
-
     def run(self, args):
         con = sqlite3.connect(self.profile_path(self.db_file))
         cursor = con.cursor()
-        num = cursor.execute('SELECT COUNT(*) FROM %s' % self.table_name).fetchone()[0]
+        num = cursor.execute(
+            'SELECT COUNT(*) FROM %s' % self.table_name).fetchone()[0]
         print(self.num_text % num + '\n')
         if args.summarize:
             return
-        result = cursor.execute('SELECT %s FROM %s' % (','.join(self.fields), self.table_name)).fetchall()
+        result = cursor.execute('SELECT %s FROM %s' %
+                                (','.join(self.fields),
+                                 self.table_name)).fetchall()
         self.process_result(result)
 
     def process_result(self, result):

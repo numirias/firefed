@@ -5,11 +5,11 @@ from tabulate import tabulate
 
 
 class Addons(Feature):
-
     def run(self, args):
         with open(self.profile_path('extensions.json')) as f:
             addons = json.load(f)['addons']
-        info(('%d addons found. (%d active)\n' % (len(addons), sum(addon['active'] for addon in addons))))
+        info(('%d addons found. (%d active)\n' %
+              (len(addons), sum(addon['active'] for addon in addons))))
         if args.summarize:
             return
         addons.sort(key=lambda x: not x['active'])

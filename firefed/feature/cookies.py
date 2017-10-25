@@ -7,7 +7,9 @@ class Cookies(SqliteTableFeature, Feature):
     db_file = 'cookies.sqlite'
     table_name = 'moz_cookies'
     num_text = '%s cookies found.'
-    fields = ['name', 'value', 'baseDomain', 'host', 'path', 'isSecure', 'isHttpOnly']
+    fields = [
+        'name', 'value', 'baseDomain', 'host', 'path', 'isSecure', 'isHttpOnly'
+    ]
 
     def process_result(self, result):
         for name, value, base, host, path, secure, http_only in result:

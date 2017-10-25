@@ -8,13 +8,11 @@ from tabulate import tabulate
 
 
 class NSSEntry(ctypes.Structure):
-    _fields_ = [('type', ctypes.c_uint),
-                ('data', ctypes.c_void_p),
+    _fields_ = [('type', ctypes.c_uint), ('data', ctypes.c_void_p),
                 ('len', ctypes.c_uint)]
 
 
 class Logins(feature.Feature):
-
     def run(self, args):
         self.init_nss()
         with open(self.profile_path('logins.json')) as f:

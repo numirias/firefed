@@ -9,7 +9,9 @@ def feature_type(val):
     try:
         return feature_map()[val]
     except KeyError as key:
-        raise argparse.ArgumentTypeError('Feature %s not found. Choose from: {%s}' % (key, ', '.join(feature_map())))
+        raise argparse.ArgumentTypeError(
+            'Feature %s not found. Choose from: {%s}' %
+            (key, ', '.join(feature_map())))
 
 
 def profile_dir(dirname):
@@ -29,12 +31,23 @@ def profile_dir(dirname):
 def main():
     parser = argparse.ArgumentParser(
         'firefed',
-        description='Firefed is a Firefox profile analyzer focusing on privacy and security.',
+        description=
+        'Firefed is a Firefox profile analyzer focusing on privacy and security.',
     )
-    parser.add_argument('-p', '--profile', help='profile name or directory', type=profile_dir, required=True)
-    parser.add_argument('-f', '--feature', type=feature_type, default=Summary,
-                        help='{%s}' % ', '.join(feature_map()))
-    parser.add_argument('-s', '--summarize', action='store_true', help='summarize results')
+    parser.add_argument(
+        '-p',
+        '--profile',
+        help='profile name or directory',
+        type=profile_dir,
+        required=True)
+    parser.add_argument(
+        '-f',
+        '--feature',
+        type=feature_type,
+        default=Summary,
+        help='{%s}' % ', '.join(feature_map()))
+    parser.add_argument(
+        '-s', '--summarize', action='store_true', help='summarize results')
     args = parser.parse_args()
     Firefed(args)
 
