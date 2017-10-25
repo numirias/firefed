@@ -39,7 +39,7 @@ def main():
         '--profile',
         help='profile name or directory',
         type=profile_dir,
-        required=True)
+        default='default')
     parser.add_argument(
         '-f',
         '--feature',
