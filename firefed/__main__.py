@@ -3,6 +3,7 @@ import os
 import re
 from firefed import Firefed
 from feature import feature_map, Summary
+import __version__ as version
 
 
 def feature_type(val):
@@ -19,6 +20,7 @@ def profile_dir(dirname):
         dirname = 'default'
     if os.path.isdir(dirname):
         return dirname
+    # If it's not an existing directory, try to find in local user profiles
     if re.match('^[\\w-]+$', dirname):
         home = os.path.expanduser('~/.mozilla/firefox')
         profile_names = os.listdir(home)
@@ -31,23 +33,28 @@ def profile_dir(dirname):
 def main():
     parser = argparse.ArgumentParser(
         'firefed',
-        description=
-        'Firefed is a Firefox profile analyzer focusing on privacy and security.',
+        description=version.__description__,
     )
     parser.add_argument(
         '-p',
         '--profile',
         help='profile name or directory',
         type=profile_dir,
-        default='default')
+        default='default',
+    )
     parser.add_argument(
         '-f',
         '--feature',
         type=feature_type,
         default=Summary,
-        help='{%s}' % ', '.join(feature_map()))
+        help='{%s}' % ', '.join(feature_map()),
+    )
     parser.add_argument(
-        '-s', '--summarize', action='store_true', help='summarize results')
+        '-s',
+        '--summarize',
+        action='store_true',
+        help='summarize results',
+    )
     args = parser.parse_args()
     Firefed(args)
 

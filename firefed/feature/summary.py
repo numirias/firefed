@@ -2,6 +2,7 @@ from feature import Feature
 
 
 class Summary(Feature):
+
     def run(self, args):
         features = Feature.__subclasses__()
         features.remove(Summary)

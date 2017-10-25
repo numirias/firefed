@@ -13,6 +13,7 @@ class NSSEntry(ctypes.Structure):
 
 
 class Logins(feature.Feature):
+
     def run(self, args):
         self.init_nss()
         with open(self.profile_path('logins.json')) as f:

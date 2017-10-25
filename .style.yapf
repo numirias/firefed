@@ -1,2 +1,7 @@
 [style]
 based_on_style = pep8
+dedent_closing_brackets = false
+blank_line_before_nested_class_or_def = true
+coalesce_brackets = true
+align_closing_bracket_with_visual_indent = true
+each_dict_entry_on_separate_line = true

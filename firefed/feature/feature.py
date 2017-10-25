@@ -3,6 +3,7 @@ import sqlite3
 
 
 class Feature:
+
     def __init__(self, firefed):
         self.ff = firefed
 
@@ -17,6 +18,7 @@ class Feature:
 
 
 class SqliteTableFeature:
+
     def run(self, args):
         con = sqlite3.connect(self.profile_path(self.db_file))
         cursor = con.cursor()

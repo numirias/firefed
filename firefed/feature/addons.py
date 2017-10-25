@@ -20,11 +20,12 @@ def signed_state(num):
 
 
 class Addons(Feature):
+
     def run(self, args):
         with open(self.profile_path('extensions.json')) as f:
             addons = json.load(f)['addons']
         info('%d addons found. (%d active)\n' %
-              (len(addons), sum(addon['active'] for addon in addons)))
+             (len(addons), sum(addon['active'] for addon in addons)))
         if args.summarize:
             return
         addons.sort(key=lambda x: not x['active'])
@@ -40,7 +41,12 @@ class Addons(Feature):
                 signed = '(unspecified)'
             visible = good('true') if addon['visible'] else bad('false')
             table.append([name, id_, version, active, signed, visible])
-        info(tabulate(table, headers=['Name', 'ID', 'Version', 'Status', 'Signature', 'Visible']))
+        info(
+            tabulate(
+                table,
+                headers=[
+                    'Name', 'ID', 'Version', 'Status', 'Signature', 'Visible'
+                ]))
 
 
 # [1]: https://dxr.mozilla.org/mozilla-central/rev/967c95cee709756596860ed2a3e6ac06ea3a053f/toolkit/mozapps/extensions/AddonManager.jsm#3495
