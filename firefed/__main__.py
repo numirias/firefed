@@ -6,15 +6,6 @@ from feature import feature_map, Summary
 import __version__ as version
 
 
-def feature_type(val):
-    try:
-        return feature_map()[val]
-    except KeyError as key:
-        raise argparse.ArgumentTypeError(
-            'Feature %s not found. Choose from: {%s}' %
-            (key, ', '.join(feature_map())))
-
-
 def profile_dir(dirname):
     if dirname is None:
         dirname = 'default'
@@ -43,18 +34,21 @@ def main():
         default='default',
     )
     parser.add_argument(
-        '-f',
-        '--feature',
-        type=feature_type,
-        default=Summary,
-        help='{%s}' % ', '.join(feature_map()),
-    )
-    parser.add_argument(
         '-s',
         '--summarize',
         action='store_true',
         help='summarize results',
     )
+    subparsers = parser.add_subparsers(
+        title='features',
+        metavar='FEATURE',
+        description='You must choose a feature.',
+        dest='feature',
+    )
+    for name, Feature in feature_map().items():
+        feature_parser = subparsers.add_parser(name, help=Feature.description)
+        Feature.add_arguments(feature_parser)
+
     args = parser.parse_args()
     Firefed(args)
 

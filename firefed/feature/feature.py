@@ -4,6 +4,8 @@ import sqlite3
 
 class Feature:
 
+    description = '(no description)'
+
     def __init__(self, firefed):
         self.ff = firefed
 
@@ -13,8 +15,11 @@ class Feature:
     def run(self, args):
         raise NotImplementedError('Features need to implement run()!')
 
-    def profile_path(self, fn):
-        return os.path.join(self.ff.profile_dir, fn)
+    def profile_path(self, path):
+        return os.path.join(self.ff.profile_dir, path)
+
+    def add_arguments(parser):
+        pass
 
 
 class SqliteTableFeature:
