@@ -45,6 +45,7 @@ def main():
         description='You must choose a feature.',
         dest='feature',
     )
+    subparsers.required = True
     for name, Feature in feature_map().items():
         feature_parser = subparsers.add_parser(name, help=Feature.description)
         Feature.add_arguments(feature_parser)
