@@ -89,9 +89,7 @@ class Logins(feature.Feature):
         )
 
     def run(self, args):
-        with open(self.profile_path('logins.json')) as f:
-            login_data = json.load(f)
-        logins = login_data['logins']
+        logins = self.load_json('logins.json')['logins']
         info('%d logins found.\n' % len(logins))
         if args.summarize:
             return

@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import json
 
 
 class Feature:
@@ -17,6 +18,11 @@ class Feature:
 
     def profile_path(self, path):
         return os.path.join(self.ff.profile_dir, path)
+
+    def load_json(self, path):
+        with open(self.profile_path(path)) as f:
+            data = json.load(f)
+        return data
 
     def add_arguments(parser):
         pass
