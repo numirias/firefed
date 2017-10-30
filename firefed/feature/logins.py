@@ -1,6 +1,9 @@
 import base64
 import json
 import ctypes
+import csv
+import sys
+import collections
 from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
 from feature import feature
 from output import info, error
@@ -72,6 +75,9 @@ class NSSWrapper:
         self.nss.NSS_Shutdown()
 
 
+Login = collections.namedtuple('Addon', 'host username password')
+
+
 class Logins(feature.Feature):
 
     def add_arguments(parser):
@@ -87,10 +93,17 @@ class Logins(feature.Feature):
             help='profile\'s master password',
             default='',
         )
+        parser.add_argument(
+            '-f',
+            '--format',
+            default='table',
+            choices=['table', 'list', 'csv'],
+            help='output format',
+        )
 
     def run(self, args):
-        logins = self.load_json('logins.json')['logins']
-        info('%d logins found.\n' % len(logins))
+        logins_json = self.load_json('logins.json')['logins']
+        info('%d logins found.\n' % len(logins_json))
         if args.summarize:
             return
         nss = NSSWrapper(args.libnss, self.ff.profile_dir)
@@ -101,11 +114,27 @@ class Logins(feature.Feature):
                 error('Incorrect master password.')
                 nss.shutdown()
                 return
-        table = []
-        for login in logins:
-            host = login['hostname']
-            username = nss.decrypt(login['encryptedUsername'])
-            password = nss.decrypt(login['encryptedPassword'])
-            table.append([host, username, password])
-        info(tabulate(table, headers=['Host', 'Username', 'Password']))
+        logins = [Login(
+            host=login['hostname'],
+            username=nss.decrypt(login['encryptedUsername']),
+            password=nss.decrypt(login['encryptedPassword']),
+        ) for login in logins_json]
+        getattr(self, 'build_%s' % args.format)(logins)
         nss.shutdown()
+
+    def build_table(self, logins):
+        info(tabulate(logins, headers=['Host', 'Username', 'Password']))
+
+
+    def build_list(self, logins):
+        for host, username, password in logins:
+            info(host)
+            info('    Username: %s' % username)
+            info('    Password: %s' % password)
+            info()
+
+    def build_csv(self, logins):
+        writer = csv.DictWriter(sys.stdout, fieldnames=Login._fields)
+        writer.writeheader()
+        writer.writerows([l._asdict() for l in logins])
+
