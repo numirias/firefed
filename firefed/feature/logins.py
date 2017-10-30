@@ -11,7 +11,7 @@ from tabulate import tabulate
 from getpass import getpass
 
 
-class NSSEntry(ctypes.Structure):
+class SECItem(ctypes.Structure):
 
     _fields_ = [
         ('type', ctypes.c_uint),
@@ -55,8 +55,8 @@ class NSSWrapper:
 
     def decrypt(self, val):
         raw = base64.b64decode(val)
-        input_ = NSSEntry()
-        output = NSSEntry()
+        input_ = SECItem()
+        output = SECItem()
         input_.data = cast(c_char_p(raw), c_void_p)
         input_.len = len(raw)
         res = self.nss.PK11SDR_Decrypt(byref(input_), byref(output), None)
