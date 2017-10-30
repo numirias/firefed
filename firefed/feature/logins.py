@@ -8,6 +8,7 @@ from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
 from feature import feature
 from output import info, error
 from tabulate import tabulate
+from getpass import getpass
 
 
 class NSSEntry(ctypes.Structure):
@@ -91,7 +92,6 @@ class Logins(feature.Feature):
             '-p',
             '--master-password',
             help='profile\'s master password',
-            default='',
         )
         parser.add_argument(
             '-f',
@@ -106,9 +106,14 @@ class Logins(feature.Feature):
         info('%d logins found.\n' % len(logins_json))
         if args.summarize:
             return
+        if args.master_password is None:
+            master_password = getpass(prompt='Master password: ')
+            info()
+        else:
+            master_password = args.master_password
         nss = NSSWrapper(args.libnss, self.ff.profile_dir)
         try:
-            nss.check_password(args.master_password)
+            nss.check_password(master_password)
         except NSSError as e:
             if e.name == 'SEC_ERROR_BAD_PASSWORD':
                 error('Incorrect master password.')
