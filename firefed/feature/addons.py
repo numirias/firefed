@@ -8,7 +8,7 @@ from distutils.version import LooseVersion
 from tabulate import tabulate
 
 from feature import Feature
-from output import good, bad, info
+from output import good, bad, info, error
 
 
 def signed_state(num):
@@ -55,6 +55,9 @@ class Addons(Feature):
         )
 
     def run(self, args):
+        if args.outdated and args.format != 'list':
+            error('--outdated can only be used with list format (--format list).')
+            return
         addons = list(self.load_addons())
         if args.id:
             addons = [a for a in addons if a.id == args.id]
