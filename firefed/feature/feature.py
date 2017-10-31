@@ -9,11 +9,13 @@ class Feature:
 
     def __init__(self, firefed):
         self.ff = firefed
+        self.args = None
 
     def __call__(self, args):
-        self.run(args)
+        self.args = args
+        self.run()
 
-    def run(self, args):
+    def run(self):
         raise NotImplementedError('Features need to implement run()!')
 
     def profile_path(self, path):
@@ -30,13 +32,13 @@ class Feature:
 
 class SqliteTableFeature:
 
-    def run(self, args):
+    def run(self):
         con = sqlite3.connect(self.profile_path(self.db_file))
         cursor = con.cursor()
         num = cursor.execute(
             'SELECT COUNT(*) FROM %s' % self.table_name).fetchone()[0]
         print(self.num_text % num + '\n')
-        if args.summarize:
+        if self.args.summarize:
             return
         result = cursor.execute('SELECT %s FROM %s' %
                                 (','.join(self.fields),

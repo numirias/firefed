@@ -101,7 +101,8 @@ class Logins(feature.Feature):
             help='output format',
         )
 
-    def run(self, args):
+    def run(self):
+        args = self.args
         logins_json = self.load_json('logins.json')['logins']
         info('%d logins found.\n' % len(logins_json))
         if args.summarize:

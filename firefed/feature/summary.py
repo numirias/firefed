@@ -3,7 +3,8 @@ from feature import Feature
 
 class Summary(Feature):
 
-    def run(self, args):
+    def run(self):
+        args = self.args
         features = Feature.__subclasses__()
         features.remove(Summary)
         for Feature_ in features:

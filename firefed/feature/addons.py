@@ -54,7 +54,8 @@ class Addons(Feature):
             help='select specific addon by id',
         )
 
-    def run(self, args):
+    def run(self):
+        args = self.args
         if args.outdated and args.format != 'list':
             error('--outdated can only be used with list format (--format list).')
             return
@@ -66,7 +67,7 @@ class Addons(Feature):
         if args.summarize:
             return
         addons.sort(key=lambda a: not a.enabled)
-        getattr(self, 'build_%s' % args.format)(addons, args)
+        getattr(self, 'build_%s' % args.format)(addons)
 
     def load_addons(self):
         addons_json = self.load_json('extensions.json')['addons']
@@ -84,7 +85,8 @@ class Addons(Feature):
                 visible=addon['visible'],
             )
 
-    def build_list(self, addons, args):
+    def build_list(self, addons):
+        args = self.args
         for addon in addons:
             enabled = good('[enabled]') if addon.enabled else bad('[disabled]')
             signed = signed_state(addon.signed) if addon.signed is not None \
@@ -105,7 +107,7 @@ class Addons(Feature):
             info('    Signature: %s' % signed)
             info()
 
-    def build_table(self, addons, _):
+    def build_table(self, addons):
         table = []
         for addon in addons:
             enabled = good('enabled') if addon.enabled else bad('disabled')
@@ -117,7 +119,7 @@ class Addons(Feature):
         info(tabulate(table, headers=['Name', 'ID', 'Version', 'Status',
                                       'Signature', 'Visible']))
 
-    def build_csv(self, addons, _):
+    def build_csv(self, addons):
         writer = csv.DictWriter(sys.stdout, fieldnames=Addon._fields)
         writer.writeheader()
         writer.writerows([addon._asdict() for addon in addons])
