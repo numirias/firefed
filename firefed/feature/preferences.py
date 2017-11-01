@@ -66,7 +66,6 @@ class Preferences(Feature):
                 info(pref)
             return
         prefs_rec = list(self.parse_userjs(self.args.recommended))
-        print(len(prefs_rec))
         for pref in prefs:
             try:
                 pref_rec = next((p for p in prefs_rec if p.key == pref.key))

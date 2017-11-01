@@ -2,7 +2,8 @@ import csv
 import sys
 import collections
 import requests
-import xml.etree.ElementTree
+from xml.etree import ElementTree
+from io import StringIO
 from urllib.parse import quote
 from distutils.version import LooseVersion
 from tabulate import tabulate
@@ -31,14 +32,13 @@ Addon = collections.namedtuple('Addon', 'id name version enabled signed visible'
 
 class Addons(Feature):
 
-    api_search_url = 'https://services.addons.mozilla.org/en-US/firefox/api/1.5/search/guid:%s'
-    api_addon_url = 'https://services.addons.mozilla.org/en-US/firefox/api/1.5/addon/%d'
+    update_check_url = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}'
 
     def add_arguments(parser):
         parser.add_argument(
             '-o',
             '--outdated',
-            help='check if addons are outdated (queries the addons.mozilla.org API)',
+            help='[experimental] check if addons are outdated (queries the addons.mozilla.org API)',
             action='store_true',
         )
         parser.add_argument(
@@ -53,11 +53,19 @@ class Addons(Feature):
             '--id',
             help='select specific addon by id',
         )
+        parser.add_argument(
+            '-v',
+            '--firefox-version',
+            help='Firefox version to check updates against',
+        )
 
     def run(self):
         args = self.args
         if args.outdated and args.format != 'list':
             error('--outdated can only be used with list format (--format list).')
+            return
+        if args.outdated and args.firefox_version is None:
+            error('--outdated needs a version (--firefox-version) to check against.')
             return
         addons = list(self.load_addons())
         if args.id:
@@ -70,6 +78,7 @@ class Addons(Feature):
         getattr(self, 'build_%s' % args.format)(addons)
 
     def load_addons(self):
+        # We prefer "extensions.json" over "addons.json"
         addons_json = self.load_json('extensions.json')['addons']
         for addon in addons_json:
             try:
@@ -94,10 +103,11 @@ class Addons(Feature):
             visible = '' if addon.visible else bad('[invisible]')
             info('%s (%s) %s %s' % (addon.name, addon.id, enabled, visible))
             if args.outdated:
-                outdated, latest = self.check_outdated(addon)
-                if latest == 'unknown':
-                    outdated_text = '(latest version unknown)'
+                latest = self.check_outdated(addon, self.args.firefox_version)
+                if latest is None:
+                    outdated_text = '(no version found)'
                 else:
+                    outdated = LooseVersion(latest) > LooseVersion(addon.version)
                     outdated_text = bad('(outdated, latest: %s)' % latest) if \
                                             outdated else good('(up-to-date)')
                 version_text = '%s %s' % (addon.version, outdated_text)
@@ -124,18 +134,20 @@ class Addons(Feature):
         writer.writeheader()
         writer.writerows([addon._asdict() for addon in addons])
 
-    def check_outdated(self, addon):
-        search_res = requests.get(self.api_search_url % quote(addon.id))
-        root = xml.etree.ElementTree.fromstring(search_res.text)
-        xml_addon = root.find('addon')
-        if xml_addon is None:
-            return False, 'unknown'
-        amo_id = int(xml_addon.attrib['id'])
-        res = requests.get(self.api_addon_url % amo_id)
-        root = xml.etree.ElementTree.fromstring(res.text)
-        latest_version = root.find('version').text
-        outdated = LooseVersion(latest_version) > LooseVersion(addon.version)
-        return (outdated, latest_version)
+    def check_outdated(self, addon, app_version):
+        url = self.update_check_url.format(
+            id=quote(addon.id),
+            app_version=quote(app_version),
+        )
+        update_res = requests.get(url).text
+        ns = {node[0]: node[1] for _, node in ElementTree.iterparse(
+            StringIO(update_res), events=['start-ns'])}
+        root = ElementTree.fromstring(update_res)
+        try:
+            version = root.find('./RDF:Description/em:version', ns).text
+        except AttributeError:
+            version = None
+        return version
 
 
 # [1]: https://dxr.mozilla.org/mozilla-central/rev/967c95cee709756596860ed2a3e6ac06ea3a053f/toolkit/mozapps/extensions/AddonManager.jsm#3495
