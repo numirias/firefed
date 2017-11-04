@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import json
+import lz4
 
 
 class Feature:
@@ -26,6 +27,29 @@ class Feature:
             data = json.load(f)
         return data
 
+    def load_sqlite(self, db_path, table, cls):
+        def obj_factory(cursor, row):
+            dict_ = {}
+            for idx, col in enumerate(cursor.description):
+                new_name = cls._column_map[col[0]]
+                dict_[new_name] = row[idx]
+            return cls(**dict_)
+        con = sqlite3.connect(self.profile_path(db_path))
+        con.row_factory = obj_factory
+        cursor = con.cursor()
+        result = cursor.execute('SELECT %s FROM %s' %
+                                (','.join(cls._column_map), table)).fetchall()
+        return result
+        con.close()
+        return result
+
+    def load_moz_lz4(self, path):
+        with open(self.profile_path(path), 'rb') as f:
+            if f.read(8) != b'mozLz40\0':
+                raise Exception('Not Mozilla lz4 format.')
+            data = lz4.block.decompress(f.read())
+        return data
+
     def add_arguments(parser):
         pass
 
@@ -41,8 +65,7 @@ class SqliteTableFeature:
         if self.args.summarize:
             return
         result = cursor.execute('SELECT %s FROM %s' %
-                                (','.join(self.fields),
-                                 self.table_name)).fetchall()
+                                (','.join(self.fields), self.table_name)).fetchall()
         self.process_result(result)
 
     def process_result(self, result):
