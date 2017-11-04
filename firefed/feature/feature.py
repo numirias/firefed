@@ -39,7 +39,6 @@ class Feature:
         cursor = con.cursor()
         result = cursor.execute('SELECT %s FROM %s' %
                                 (','.join(cls._column_map), table)).fetchall()
-        return result
         con.close()
         return result
 
