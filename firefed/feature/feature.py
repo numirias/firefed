@@ -65,6 +65,7 @@ class SqliteTableFeature:
             return
         result = cursor.execute('SELECT %s FROM %s' %
                                 (','.join(self.fields), self.table_name)).fetchall()
+        con.close()
         self.process_result(result)
 
     def process_result(self, result):
