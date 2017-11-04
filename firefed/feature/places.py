@@ -43,7 +43,7 @@ class History(Feature):
 
     def build_short(self, entries):
         for entry in entries:
-            print(entry.url)
+            info(entry.url)
 
     def build_csv(self, entries):
         writer = csv.writer(sys.stdout)
