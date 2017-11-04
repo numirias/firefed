@@ -31,14 +31,21 @@ class Feature:
         def obj_factory(cursor, row):
             dict_ = {}
             for idx, col in enumerate(cursor.description):
-                new_name = cls._column_map[col[0]]
+                try:
+                    new_name = cls._column_map[col[0]]
+                except AttributeError:
+                    new_name = col[0]
                 dict_[new_name] = row[idx]
             return cls(**dict_)
         con = sqlite3.connect(self.profile_path(db_path))
         con.row_factory = obj_factory
         cursor = con.cursor()
+        try:
+            sql_fields = cls._column_map.keys()
+        except AttributeError:
+            sql_fields = cls._fields
         result = cursor.execute('SELECT %s FROM %s' %
-                                (','.join(cls._column_map), table)).fetchall()
+                                (','.join(sql_fields), table)).fetchall()
         con.close()
         return result
 
