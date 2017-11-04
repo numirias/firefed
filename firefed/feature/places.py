@@ -27,14 +27,14 @@ class History(Feature):
 
     def run(self):
         entries = self.load_sqlite('places.sqlite', 'moz_places', HistoryEntry)
+        # Filter out entries without last visit date (e.g. bookmarks)
+        entries = [e for e in entries if e.last_visit_date is not None]
+        entries.sort(key=lambda x: x.last_visit_date)
         getattr(self, 'build_%s' % self.args.format)(entries)
 
     def build_list(self, entries):
         for entry in entries:
-            try:
-                last_visit = datetime.fromtimestamp(entry.last_visit_date//1000000)
-            except TypeError:
-                last_visit = None
+            last_visit = datetime.fromtimestamp(entry.last_visit_date//1000000)
             info(entry.url)
             info('    Title:      %s' % entry.title)
             info('    Last visit: %s' % last_visit)
