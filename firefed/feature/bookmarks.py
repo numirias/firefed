@@ -1,3 +1,5 @@
+import csv
+import sys
 import sqlite3
 from collections import namedtuple
 
@@ -9,7 +11,7 @@ Bookmark = namedtuple('Bookmark', 'id parent type title url')
 DIRECTORY_TYPE = 2
 
 
-@output_formats(['tree', 'list'], default='tree')
+@output_formats(['tree', 'list', 'csv'], default='tree')
 class Bookmarks(Feature):
 
     def run(self):
@@ -41,3 +43,13 @@ class Bookmarks(Feature):
             if b.parent == 1:
                 walk(b)
 
+    def build_list(self, bookmarks):
+        for bookmark in bookmarks:
+            if not bookmark.url:
+                continue
+            info('%s\n    %s' % (bookmark.title, bookmark.url))
+
+    def build_csv(self, bookmarks):
+        writer = csv.writer(sys.stdout)
+        writer.writerow(('title', 'url'))
+        writer.writerows(((b.title, b.url) for b in bookmarks if b.url))
