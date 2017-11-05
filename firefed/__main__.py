@@ -1,4 +1,5 @@
 import argparse
+import configparser
 import os
 import re
 from firefed import Firefed
@@ -11,14 +12,18 @@ def profile_dir(dirname):
         dirname = 'default'
     if os.path.isdir(dirname):
         return dirname
-    # If it's not an existing directory, try to find in local user profiles
-    if re.match('^[\\w-]+$', dirname):
-        home = os.path.expanduser('~/.mozilla/firefox')
-        profile_names = os.listdir(home)
-        for name in profile_names:
-            if name.endswith('.%s' % dirname):
-                return os.path.join(home, name)
-    raise argparse.ArgumentTypeError('Profile %s not found.' % dirname)
+    mozilla_dir = os.path.expanduser('~/.mozilla/firefox')
+    config = configparser.ConfigParser()
+    config.read(os.path.join(mozilla_dir, 'profiles.ini'))
+    profiles = [v for k, v in config.items() if k.startswith('Profile')]
+    try:
+        profile = next(p for p in profiles if p['name'] == dirname)
+    except StopIteration:
+        raise argparse.ArgumentTypeError('Profile "%s" not found.' % dirname)
+    if profile['IsRelative']:
+        path = os.path.join(mozilla_dir, profile['Path'])
+        return path
+    return profile['Path']
 
 
 def main():
