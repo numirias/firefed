@@ -8,7 +8,7 @@ from urllib.parse import quote
 from distutils.version import LooseVersion
 from tabulate import tabulate
 
-from feature import Feature
+from feature import Feature, output_formats
 from output import good, bad, info, error
 
 
@@ -30,6 +30,7 @@ def signed_state(num):
 Addon = collections.namedtuple('Addon', 'id name version enabled signed visible')
 
 
+@output_formats(['table', 'list', 'csv'], default='table')
 class Addons(Feature):
 
     update_check_url = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}'
@@ -40,13 +41,6 @@ class Addons(Feature):
             '--outdated',
             help='[experimental] check if addons are outdated (queries the addons.mozilla.org API)',
             action='store_true',
-        )
-        parser.add_argument(
-            '-f',
-            '--format',
-            default='table',
-            choices=['table', 'list', 'csv'],
-            help='output format',
         )
         parser.add_argument(
             '-i',
@@ -75,7 +69,7 @@ class Addons(Feature):
         if args.summarize:
             return
         addons.sort(key=lambda a: not a.enabled)
-        getattr(self, 'build_%s' % args.format)(addons)
+        self.build_format(addons)
 
     def load_addons(self):
         # We prefer "extensions.json" over "addons.json"

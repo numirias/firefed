@@ -3,6 +3,22 @@ import sqlite3
 import json
 import lz4
 
+def output_formats(choices, default):
+    def decorator(cls):
+        original_add_arguments = cls.add_arguments
+        def add_arguments(parser):
+            parser.add_argument(
+                '-f',
+                '--format',
+                default=default,
+                choices=choices,
+                help='output format',
+            )
+            original_add_arguments(parser)
+        cls.add_arguments = add_arguments
+        return cls
+    return decorator
+
 
 class Feature:
 
@@ -15,6 +31,9 @@ class Feature:
     def __call__(self, args):
         self.args = args
         self.run()
+
+    def add_arguments(parser):
+        pass
 
     def run(self):
         raise NotImplementedError('Features need to implement run()!')
@@ -56,8 +75,8 @@ class Feature:
             data = lz4.block.decompress(f.read())
         return data
 
-    def add_arguments(parser):
-        pass
+    def build_format(self, *args, **kwargs):
+        getattr(self, 'build_%s' % self.args.format)(*args, **kwargs)
 
 
 class SqliteTableFeature:

@@ -5,7 +5,7 @@ from fnmatch import fnmatch
 import csv
 import sys
 
-from feature import Feature
+from feature import Feature, output_formats
 from output import info, error
 
 
@@ -51,16 +51,10 @@ def session_file(key):
         return key
 
 
+@output_formats(['list', 'csv'], default='list')
 class Cookies(Feature):
 
     def add_arguments(parser):
-        parser.add_argument(
-            '-f',
-            '--format',
-            default='list',
-            choices=['list', 'csv'],
-            help='output format',
-        )
         parser.add_argument(
             '-H',
             '--host',
@@ -85,7 +79,7 @@ class Cookies(Feature):
         host_pattern = self.args.host
         if host_pattern:
             cookies = [c for c in cookies if fnmatch(c.host, host_pattern)]
-        getattr(self, 'build_%s' % self.args.format)(cookies)
+        self.build_format(cookies)
 
     def build_list(self, cookies):
         for cookie in cookies:

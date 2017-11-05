@@ -5,7 +5,7 @@ import csv
 import sys
 import collections
 from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
-from feature import feature
+from feature import Feature, output_formats
 from output import info, error
 from tabulate import tabulate
 from getpass import getpass
@@ -76,10 +76,11 @@ class NSSWrapper:
         self.nss.NSS_Shutdown()
 
 
-Login = collections.namedtuple('Addon', 'host username password')
+Login = collections.namedtuple('Login', 'host username password')
 
 
-class Logins(feature.Feature):
+@output_formats(['table', 'list', 'csv'], default='table')
+class Logins(Feature):
 
     def add_arguments(parser):
         parser.add_argument(
@@ -92,13 +93,6 @@ class Logins(feature.Feature):
             '-p',
             '--master-password',
             help='profile\'s master password',
-        )
-        parser.add_argument(
-            '-f',
-            '--format',
-            default='table',
-            choices=['table', 'list', 'csv'],
-            help='output format',
         )
 
     def run(self):
@@ -125,7 +119,7 @@ class Logins(feature.Feature):
             username=nss.decrypt(login['encryptedUsername']),
             password=nss.decrypt(login['encryptedPassword']),
         ) for login in logins_json]
-        getattr(self, 'build_%s' % args.format)(logins)
+        self.build_format(logins)
         nss.shutdown()
 
     def build_table(self, logins):

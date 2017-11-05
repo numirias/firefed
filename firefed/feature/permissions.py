@@ -2,25 +2,17 @@ import csv
 import sys
 
 from tabulate import tabulate
-from feature import Feature, SqliteTableFeature
+from feature import Feature, SqliteTableFeature, output_formats
 from output import info
 
 
+@output_formats(['table', 'csv'], default='table')
 class Permissions(SqliteTableFeature, Feature):
 
     db_file = 'permissions.sqlite'
     table_name = 'moz_perms'
     num_text = '%s site permissions found.'
     fields = ['origin', 'type']
-
-    def add_arguments(parser):
-        parser.add_argument(
-            '-f',
-            '--format',
-            default='table',
-            choices=['table', 'csv'],
-            help='output format',
-        )
 
     def process_result(self, result):
         if self.args.format == 'table':
