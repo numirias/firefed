@@ -7,7 +7,7 @@ from feature import Feature, output_formats
 from output import info, good
 
 
-Bookmark = namedtuple('Bookmark', 'id parent type title url')
+Bookmark = namedtuple('Bookmark', 'id parent type title guid added last_modified url')
 DIRECTORY_TYPE = 2
 
 
@@ -18,7 +18,7 @@ class Bookmarks(Feature):
         con = sqlite3.connect(self.profile_path('places.sqlite'))
         cursor = con.cursor()
         result = cursor.execute(
-            'SELECT b.id, b.parent, b.type, b.title, p.url FROM moz_bookmarks b LEFT JOIN moz_places p ON b.fk = p.id'
+            'SELECT b.id, b.parent, b.type, b.title, b.guid, b.dateAdded, b.lastModified, p.url FROM moz_bookmarks b LEFT JOIN moz_places p ON b.fk = p.id'
         )
         bookmarks = [Bookmark(*row) for row in result]
         # Remove pseudo-bookmarks from list
@@ -40,7 +40,11 @@ class Bookmarks(Feature):
             for child in children:
                 walk(child, depth+1)
         for b in bookmarks:
-            if b.parent == 1:
+            try:
+                parent_guid = b_map[b.parent].guid
+            except KeyError:
+                continue
+            if b_map[b.parent].guid == 'root________':
                 walk(b)
 
     def build_list(self, bookmarks):
@@ -51,5 +55,8 @@ class Bookmarks(Feature):
 
     def build_csv(self, bookmarks):
         writer = csv.writer(sys.stdout)
-        writer.writerow(('title', 'url'))
-        writer.writerows(((b.title, b.url) for b in bookmarks if b.url))
+        writer.writerow(('title', 'url', 'added', 'last_modified'))
+        for b in bookmarks:
+            if not b.url:
+                continue
+            writer.writerow((b.title, b.url, b.added//1000000, b.last_modified//1000000))
