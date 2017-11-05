@@ -12,19 +12,20 @@ from feature import Feature, output_formats
 from output import good, bad, info, error
 
 
-def signed_state(num):
-    # See constants defined in [1]
-    states = {
-        -2: 'broken',
-        -1: 'unknown',
-        0: 'missing',
-        1: 'preliminary',
-        2: 'signed',
-        3: 'system',
-        4: 'privileged'
-    }
-    text = states[num]
-    return good(text) if num > 0 else bad(text)
+# See constants defined in [1]
+SIGNED_STATES = {
+    -2: 'broken',
+    -1: 'unknown',
+    0: 'missing',
+    1: 'preliminary',
+    2: 'signed',
+    3: 'system',
+    4: 'privileged'
+}
+
+
+def signed_state(text):
+    return good(text) if text in (v for k, v in SIGNED_STATES.items() if k > 0) else bad(text)
 
 
 Addon = collections.namedtuple('Addon', 'id name version enabled signed visible')
@@ -84,7 +85,7 @@ class Addons(Feature):
                 name=addon['defaultLocale']['name'],
                 version=addon['version'],
                 enabled=addon['active'],
-                signed=signed,
+                signed=None if signed is None else SIGNED_STATES[signed],
                 visible=addon['visible'],
             )
 
