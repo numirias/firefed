@@ -33,7 +33,7 @@ class Bookmarks(Feature):
                 text = good('[%s]') % node.title
                 info('%s%s' % (depth*4*' ', text))
             else:
-                info('%s- %s' % (depth*4*' ', node.title))
+                info('%s* %s' % (depth*4*' ', node.title))
                 info('%s%s' % ((depth+1)*4*' ', node.url))
 
             children = [n for n in bookmarks if n.parent == node.id]
@@ -44,8 +44,11 @@ class Bookmarks(Feature):
                 parent_guid = b_map[b.parent].guid
             except KeyError:
                 continue
-            if b_map[b.parent].guid == 'root________':
-                walk(b)
+            if b.title == '':
+                continue
+            if b_map[b.parent].guid != 'root________':
+                continue
+            walk(b)
 
     def build_list(self, bookmarks):
         for bookmark in bookmarks:
