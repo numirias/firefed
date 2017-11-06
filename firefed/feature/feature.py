@@ -2,6 +2,8 @@ import os
 import sqlite3
 import json
 import lz4
+from abc import ABC, abstractmethod
+
 
 def output_formats(choices, default):
     def decorator(cls):
@@ -20,7 +22,7 @@ def output_formats(choices, default):
     return decorator
 
 
-class Feature:
+class Feature(ABC):
 
     description = '(no description)'
 
@@ -35,8 +37,9 @@ class Feature:
     def add_arguments(parser):
         pass
 
+    @abstractmethod
     def run(self):
-        raise NotImplementedError('Features need to implement run()!')
+        pass
 
     def profile_path(self, path):
         return os.path.join(self.ff.profile_dir, path)
@@ -79,7 +82,7 @@ class Feature:
         getattr(self, 'build_%s' % self.args.format)(*args, **kwargs)
 
 
-class SqliteTableFeature:
+class SqliteTableFeature(ABC):
 
     def run(self):
         con = sqlite3.connect(self.profile_path(self.db_file))
@@ -94,5 +97,6 @@ class SqliteTableFeature:
         con.close()
         self.process_result(result)
 
+    @abstractmethod
     def process_result(self, result):
-        raise NotImplementedError()
+        pass
