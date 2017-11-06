@@ -21,4 +21,3 @@ class Permissions(SqliteTableFeature, Feature):
         writer = csv.writer(sys.stdout)
         writer.writerow(('host', 'permission'))
         writer.writerows(result)
-

@@ -5,6 +5,7 @@ from .cookies import Cookies
 from .logins import Logins
 from .places import Downloads, Hosts, InputHistory
 from .history import History
+from .visits import Visits
 from .preferences import Preferences
 from .summary import Summary
 from .permissions import Permissions

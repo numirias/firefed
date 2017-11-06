@@ -1,10 +1,9 @@
 from output import info
-from datetime import datetime
 import csv
 import sys
 
 from feature import Feature, output_formats
-from feature.util import moz_timestamp
+from feature.util import moz_datetime
 
 
 class HistoryEntry:
@@ -28,7 +27,7 @@ class History(Feature):
 
     def build_list(self, entries):
         for entry in entries:
-            last_visit = datetime.fromtimestamp(moz_timestamp(entry.last_visit_date))
+            last_visit = moz_datetime(entry.last_visit_date)
             info(entry.url)
             info('    Title:      %s' % entry.title)
             info('    Last visit: %s' % last_visit)
