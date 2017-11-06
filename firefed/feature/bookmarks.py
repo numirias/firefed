@@ -4,6 +4,7 @@ import sqlite3
 from collections import namedtuple
 
 from feature import Feature, output_formats
+from feature.util import moz_timestamp
 from output import info, good
 
 
@@ -62,4 +63,4 @@ class Bookmarks(Feature):
         for b in bookmarks:
             if not b.url:
                 continue
-            writer.writerow((b.title, b.url, b.added//1000000, b.last_modified//1000000))
+            writer.writerow((b.title, b.url, moz_timestamp(b.added), moz_timestamp(b.last_modified)))
