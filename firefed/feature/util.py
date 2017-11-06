@@ -1,8 +1,9 @@
+from collections import OrderedDict
+
 from feature import Feature
 
 
 def feature_map():
-    return {
-        module.__name__.lower(): module
-        for module in Feature.__subclasses__()
-    }
+    return OrderedDict(
+        sorted((m.__name__.lower(), m) for m in Feature.__subclasses__())
+    )
