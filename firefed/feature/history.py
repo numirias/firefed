@@ -3,7 +3,7 @@ import csv
 import sys
 
 from feature import Feature, output_formats
-from feature.util import moz_datetime
+from feature.util import moz_datetime, moz_timestamp
 
 
 class HistoryEntry:
@@ -42,4 +42,9 @@ class History(Feature):
         writer = csv.writer(sys.stdout)
         writer.writerow(HistoryEntry._fields)
         for entry in entries:
-            writer.writerow((getattr(entry, key) for key in HistoryEntry._fields))
+            writer.writerow((
+                entry.url,
+                entry.title,
+                moz_timestamp(entry.last_visit_date),
+                entry.visit_count,
+            ))
