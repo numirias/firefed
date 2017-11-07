@@ -9,6 +9,8 @@ name = "pypi"
 
 tabulate = "*"
 colorama = "*"
+"lz4" = "*"
+requests = "*"
 
 
 [dev-packages]
