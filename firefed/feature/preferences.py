@@ -1,9 +1,10 @@
 import re
 import requests
-from feature import Feature
 from collections import defaultdict
 from tabulate import tabulate
-from output import info, good, bad
+
+from firefed.feature import Feature
+from firefed.output import info, good, bad
 
 
 pref_regex = r'\s*user_pref\((["\'])(.+?)\1,\s*(.+?)\);'

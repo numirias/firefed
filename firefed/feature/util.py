@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from datetime import datetime
 
-from feature import Feature
+from firefed.feature import Feature
 
 
 def feature_map():

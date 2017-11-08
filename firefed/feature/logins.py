@@ -5,10 +5,11 @@ import csv
 import sys
 import collections
 from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
-from feature import Feature, output_formats
-from output import info, error
 from tabulate import tabulate
 from getpass import getpass
+
+from firefed.feature import Feature, output_formats
+from firefed.output import info, error
 
 
 class SECItem(ctypes.Structure):

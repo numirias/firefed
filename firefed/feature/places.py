@@ -1,5 +1,5 @@
-from feature import Feature, SqliteTableFeature
-from output import info
+from firefed.feature import Feature, SqliteTableFeature
+from firefed.output import info
 
 
 class Downloads(SqliteTableFeature, Feature):

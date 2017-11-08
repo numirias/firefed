@@ -8,8 +8,8 @@ from urllib.parse import quote
 from distutils.version import LooseVersion
 from tabulate import tabulate
 
-from feature import Feature, output_formats
-from output import good, bad, info, error
+from firefed.feature import Feature, output_formats
+from firefed.output import good, bad, info, error
 
 
 # See constants defined in [1]

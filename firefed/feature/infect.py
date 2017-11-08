@@ -3,10 +3,10 @@ import os
 import sys
 from zipfile import ZipFile
 from pathlib import Path
-
-from feature import Feature
-from output import error, info, good, bad
 import lz4
+
+from firefed.feature import Feature
+from firefed.output import error, info, good, bad
 
 
 startup_key = 'app-system-defaults'

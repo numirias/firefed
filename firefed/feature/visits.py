@@ -1,12 +1,12 @@
-from output import info
 from datetime import datetime
 import csv
 import sys
 import sqlite3
 from collections import namedtuple
 
-from feature import Feature, output_formats
-from feature.util import moz_datetime, moz_timestamp
+from firefed.feature import Feature, output_formats
+from firefed.feature.util import moz_datetime, moz_timestamp
+from firefed.output import info
 
 
 Visit = namedtuple('Visit', 'id from_visit visit_date url')

@@ -1,9 +1,9 @@
-from output import info
 import csv
 import sys
 
-from feature import Feature, output_formats
-from feature.util import moz_datetime, moz_timestamp
+from firefed.feature import Feature, output_formats
+from firefed.feature.util import moz_datetime, moz_timestamp
+from firefed.output import info
 
 
 class HistoryEntry:

@@ -5,8 +5,8 @@ from fnmatch import fnmatch
 import csv
 import sys
 
-from feature import Feature, output_formats
-from output import info, error
+from firefed.feature import Feature, output_formats
+from firefed.output import info, error
 
 
 class Cookie:

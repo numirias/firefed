@@ -2,8 +2,8 @@ import csv
 import sys
 
 from tabulate import tabulate
-from feature import Feature, SqliteTableFeature, output_formats
-from output import info
+from firefed.feature import Feature, SqliteTableFeature, output_formats
+from firefed.output import info
 
 
 @output_formats(['table', 'csv'], default='table')

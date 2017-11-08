@@ -1,4 +1,4 @@
-from feature import Feature
+from firefed.feature import Feature
 
 
 class Summary(Feature):

@@ -1,5 +1,5 @@
-from output import info
-from feature.util import feature_map
+from .output import info
+from .feature.util import feature_map
 
 
 class Firefed:
