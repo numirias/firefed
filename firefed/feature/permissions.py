@@ -1,7 +1,7 @@
 import csv
 import sys
-
 from tabulate import tabulate
+
 from firefed.feature import Feature, SqliteTableFeature, output_formats
 from firefed.output import info
 

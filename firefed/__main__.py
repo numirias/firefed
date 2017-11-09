@@ -2,9 +2,10 @@ import argparse
 import configparser
 import os
 import re
+
 from firefed import Firefed
-from feature import feature_map, Summary
-import __version__ as version
+from firefed.feature import feature_map, Summary
+import firefed.__version__ as version
 
 
 def profile_dir(dirname):

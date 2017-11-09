@@ -84,7 +84,7 @@ ADDON_STARTUP_FILE = 'addonStartup.json.lz4'
 EXTENSIONS_DIR = 'extensions'
 EXTENSIONS_DB = 'extensions.json'
 
-ROOT_PATH = os.path.dirname(os.path.realpath(sys.modules['__main__'].__file__))
+ROOT_PATH = os.path.dirname(os.path.realpath(sys.modules['firefed'].__file__))
 
 
 def make_addon_entry(path):
