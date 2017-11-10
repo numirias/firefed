@@ -11,11 +11,10 @@ class ProfileNotFoundError(Exception):
         super().__init__('Profile "%s" not found.' % name)
 
 
-def profile_dir(val):
-    """Return directory for dirname.
-    """
-    if val:
-        possible_path = Path(val)
+def profile_dir(name):
+    """Return path to FF profile for a given profile name or path."""
+    if name:
+        possible_path = Path(name)
         if possible_path.exists():
             return possible_path
     mozilla_dir = Path('~/.mozilla/firefox').expanduser()
@@ -23,12 +22,12 @@ def profile_dir(val):
     config.read(mozilla_dir / 'profiles.ini')
     profiles = [v for k, v in config.items() if k.startswith('Profile')]
     try:
-        if val:
-            profile = next(p for p in profiles if p['name'] == val)
+        if name:
+            profile = next(p for p in profiles if p['name'] == name)
         else:
             profile = next(p for p in profiles if 'Default' in p and int(p['Default']))
     except StopIteration:
-        raise ProfileNotFoundError(val or '(default)')
+        raise ProfileNotFoundError(name or '(default)')
     profile_path = Path(profile['Path'])
     if int(profile['IsRelative']):
         return mozilla_dir / profile_path
@@ -43,8 +42,10 @@ def feature_map():
 
 
 def moz_datetime(ts):
+    """Convert Mozilla timestamp to datetime."""
     return datetime.fromtimestamp(moz_timestamp(ts))
 
 
 def moz_timestamp(ts):
+    """Convert Mozilla timestamp to UNIX timestamp."""
     return ts // 1000000

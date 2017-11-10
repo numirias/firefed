@@ -2,9 +2,10 @@ import os
 from pathlib import Path
 import shutil
 import pytest
+from datetime import datetime
 
-from firefed.feature import Feature
-from firefed.util import profile_dir, ProfileNotFoundError
+from firefed.feature import Feature, Summary
+from firefed.util import profile_dir, ProfileNotFoundError, feature_map, moz_datetime, moz_timestamp
 
 
 @pytest.fixture(scope='function')
@@ -34,3 +35,14 @@ class TestUtils:
         assert profile_dir('user2') == config_path / 'random.user2'
         with pytest.raises(ProfileNotFoundError):
             profile_dir('nonexistent')
+
+    def test_feature_map(self):
+        fmap = feature_map()
+        assert len(fmap) > 1
+        assert fmap['summary'] is Summary
+
+    def test_timestamps(self):
+        ts = moz_timestamp(1000000)
+        assert ts == 1
+        dt = moz_datetime(1000000)
+        assert dt == datetime.fromtimestamp(1)
