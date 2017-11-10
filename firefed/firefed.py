@@ -1,4 +1,4 @@
-from firefed.feature.util import feature_map
+from firefed.util import feature_map
 from firefed.output import info
 
 

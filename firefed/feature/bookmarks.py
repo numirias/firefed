@@ -4,8 +4,8 @@ import sqlite3
 from collections import namedtuple
 
 from firefed.feature import Feature, output_formats
-from firefed.feature.util import moz_timestamp
 from firefed.output import info, good
+from firefed.util import moz_timestamp
 
 
 Bookmark = namedtuple('Bookmark', 'id parent type title guid added last_modified url')

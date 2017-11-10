@@ -1,31 +1,16 @@
 import argparse
-import configparser
-import os
-import re
 
 from firefed import Firefed
-from firefed.feature import feature_map, Summary
+from firefed.feature import Summary
+from firefed.util import feature_map, profile_dir, ProfileNotFoundError
 import firefed.__version__ as version
 
 
-def profile_dir(dirname):
-    if dirname is None:
-        dirname = 'default'
-    if os.path.isdir(dirname):
-        return dirname
-    mozilla_dir = os.path.expanduser('~/.mozilla/firefox')
-    config = configparser.ConfigParser()
-    config.read(os.path.join(mozilla_dir, 'profiles.ini'))
-    profiles = [v for k, v in config.items() if k.startswith('Profile')]
+def profile_dir_type(dirname):
     try:
-        profile = next(p for p in profiles if p['name'] == dirname)
-    except StopIteration:
-        raise argparse.ArgumentTypeError('Profile "%s" not found.' % dirname)
-    if profile['IsRelative']:
-        path = os.path.join(mozilla_dir, profile['Path'])
-        return path
-    return profile['Path']
-
+        return profile_dir(dirname)
+    except ProfileNotFoundError as e:
+        raise argparse.ArgumentTypeError(e)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -36,8 +21,8 @@ def main():
         '-p',
         '--profile',
         help='profile name or directory',
-        type=profile_dir,
-        default='default',
+        type=profile_dir_type,
+        default='',
     )
     parser.add_argument(
         '-s',

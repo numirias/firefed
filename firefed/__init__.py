@@ -1,1 +1,1 @@
-from .firefed import Firefed
+from firefed.firefed import Firefed

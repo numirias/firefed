@@ -11,4 +11,3 @@ from .summary import Summary
 from .permissions import Permissions
 from .forms import Forms
 from .infect import Infect
-from .util import feature_map
