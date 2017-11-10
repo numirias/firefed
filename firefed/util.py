@@ -24,15 +24,13 @@ def profile_dir(val):
     profiles = [v for k, v in config.items() if k.startswith('Profile')]
     try:
         if val:
-            print('looking for name', val)
             profile = next(p for p in profiles if p['name'] == val)
         else:
-            print('looking for default')
-            profile = next(p for p in profiles if 'Default' in p and p['Default'])
+            profile = next(p for p in profiles if 'Default' in p and int(p['Default']))
     except StopIteration:
         raise ProfileNotFoundError(val or '(default)')
     profile_path = Path(profile['Path'])
-    if profile['IsRelative']:
+    if int(profile['IsRelative']):
         return mozilla_dir / profile_path
     return profile_path
 
