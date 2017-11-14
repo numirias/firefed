@@ -33,6 +33,7 @@ class NSSError(Exception):
 
 
 class NSSWrapper:
+    """Wrapper for access to Mozilla's Network Security Services library."""
 
     def __init__(self, libnss='libnss3.so', path='.'):
         self.nss = nss = CDLL(libnss)

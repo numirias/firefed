@@ -6,7 +6,7 @@ from firefed.output import info
 from firefed.util import moz_datetime, moz_timestamp
 
 
-class HistoryEntry:
+class HistoryEntry: # TODO: Refactor as namedtuple?
 
     _fields = ['url', 'title', 'last_visit_date', 'visit_count']
 
