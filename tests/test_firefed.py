@@ -1,3 +1,4 @@
+import argparse
 from datetime import datetime
 import os
 from pathlib import Path
@@ -6,10 +7,13 @@ import shutil
 import sqlite3
 import csv
 from io import StringIO
+from unittest import mock
+import sys
 
+import firefed.__main__
 from firefed import Firefed
 from firefed.feature import Feature, Summary, Logins
-from firefed.util import profile_dir, ProfileNotFoundError, feature_map, moz_datetime, moz_timestamp, make_parser
+from firefed.util import profile_dir, profile_dir_type, ProfileNotFoundError, feature_map, moz_datetime, moz_timestamp, make_parser
 
 
 @pytest.fixture
@@ -28,13 +32,13 @@ def mock_home(tmpdir_factory):
         f.write(data)
     return home_path
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def mock_profile(mock_home):
     profile_path = mock_home / '.mozilla/firefox/random.default'
     make_permissions_sqlite(profile_path)
     return profile_path
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def feature(mock_profile, parser):
     def func(*more_args):
         args = parser.parse_args(['--profile', str(mock_profile), *more_args])
@@ -57,6 +61,27 @@ def parse_csv(str_):
     return list(csv.reader(StringIO(str_)))
 
 
+class TestMain:
+
+    def test_main(self):
+        with pytest.raises(SystemExit) as e:
+            firefed.__main__.main()
+        assert e.value.code == 2
+
+    def test_main_help(self, capsys):
+        with mock.patch.object(sys, 'argv', ['firefed', '-h']):
+            with pytest.raises(SystemExit) as e:
+                firefed.__main__.main()
+        assert e.value.code == 0
+        out, _ = capsys.readouterr()
+        assert out.startswith('usage:')
+
+    def test_main_with_feature(self, mock_profile):
+        argv = ['firefed', '--profile', str(mock_profile), 'summary']
+        with mock.patch.object(sys, 'argv', argv):
+            firefed.__main__.main()
+
+
 class TestUtils:
 
     def test_profile_dir(self, monkeypatch, mock_home):
@@ -70,6 +95,21 @@ class TestUtils:
         assert profile_dir('user2') == config_path / 'random.user2'
         with pytest.raises(ProfileNotFoundError):
             profile_dir('nonexistent')
+
+    def test_profile_dir_type(self, mock_home):
+        assert profile_dir('default') == profile_dir_type('default')
+        with pytest.raises(argparse.ArgumentTypeError):
+            profile_dir_type('nonexistent')
+
+    def test_argparse(self, capsys, mock_profile):
+        parser = make_parser()
+        with pytest.raises(SystemExit) as e:
+            args = parser.parse_args(['-h'])
+        assert e.value.code == 0
+        out, _ = capsys.readouterr()
+        assert out.startswith('usage:')
+        args = parser.parse_args(['--profile', str(mock_profile), 'summary'])
+        assert args.summarize is False
 
     def test_feature_map(self):
         fmap = feature_map()

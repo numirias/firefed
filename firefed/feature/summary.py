@@ -9,4 +9,6 @@ class Summary(Feature):
         features.remove(Summary)
         for Feature_ in features:
             args.summarize = True
+            if not Feature.has_summary:
+                continue
             Feature_(self.ff)(args)

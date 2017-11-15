@@ -27,6 +27,7 @@ def output_formats(choices, default):
 class Feature(ABC):
 
     description = '(no description)'
+    has_summary = False
 
     def __init__(self, firefed):
         self.ff = firefed
