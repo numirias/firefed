@@ -4,6 +4,8 @@ import json
 import lz4
 from abc import ABC, abstractmethod
 
+from firefed.output import info
+
 
 def output_formats(choices, default):
     def decorator(cls):
@@ -89,7 +91,8 @@ class SqliteTableFeature(ABC):
         cursor = con.cursor()
         num = cursor.execute(
             'SELECT COUNT(*) FROM %s' % self.table_name).fetchone()[0]
-        print(self.num_text % num + '\n')
+        if self.args.format != 'csv':
+            info(self.num_text % num + '\n')
         if self.args.summarize:
             return
         result = cursor.execute('SELECT %s FROM %s' %

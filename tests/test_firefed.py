@@ -4,13 +4,19 @@ from pathlib import Path
 import pytest
 import shutil
 import sqlite3
+import csv
+from io import StringIO
 
 from firefed import Firefed
 from firefed.feature import Feature, Summary, Logins
 from firefed.util import profile_dir, ProfileNotFoundError, feature_map, moz_datetime, moz_timestamp, make_parser
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture
+def parser():
+    return make_parser()
+
+@pytest.fixture(scope='module')
 def mock_home(tmpdir_factory):
     src_path = Path(__file__).parent / 'mock_home/mozilla'
     home_path = tmpdir_factory.mktemp('mock_home')
@@ -22,7 +28,20 @@ def mock_home(tmpdir_factory):
         f.write(data)
     return home_path
 
-def mock_permissions(profile_dir):
+@pytest.fixture
+def mock_profile(mock_home):
+    profile_path = mock_home / '.mozilla/firefox/random.default'
+    make_permissions_sqlite(profile_path)
+    return profile_path
+
+@pytest.fixture
+def feature(mock_profile, parser):
+    def func(*more_args):
+        args = parser.parse_args(['--profile', str(mock_profile), *more_args])
+        Firefed(args)
+    return func
+
+def make_permissions_sqlite(profile_dir):
     path = Path(profile_dir) / 'permissions.sqlite'
     con = sqlite3.connect(str(path))
     cursor = con.cursor()
@@ -32,10 +51,10 @@ INSERT INTO moz_perms VALUES(1,'http://one.example/','permission1',1,0,0,1461787
 INSERT INTO moz_perms VALUES(2,'https://two.example/','permission2',1,0,0,1461891431806);
 INSERT INTO moz_perms VALUES(3,'https://three.example/','permission3',1,0,0,1462493666486);
     ''')
+    con.close()
 
-@pytest.fixture
-def parser():
-    return make_parser()
+def parse_csv(str_):
+    return list(csv.reader(StringIO(str_)))
 
 
 class TestUtils:
@@ -67,9 +86,13 @@ class TestUtils:
 
 class TestFeatures:
 
-    def test_permissions(self, mock_home, parser):
-        config_path = mock_home / '.mozilla/firefox'
-        profile_path = config_path / 'random.default'
-        mock_permissions(profile_path)
-        args = parser.parse_args(['--profile', str(profile_path), 'permissions', '--format', 'table'])
-        Firefed(args)
+    def test_permissions(self, feature, capsys):
+        feature('permissions', '--format', 'table')
+        out, _ = capsys.readouterr()
+        assert any('http://two.example/' and 'permission2' in line for line in out.split('\n'))
+        feature('permissions', '--format', 'csv')
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert len(data) == 4
+        assert data[0] == ['host', 'permission']
+        assert ['https://two.example/', 'permission2'] in data
