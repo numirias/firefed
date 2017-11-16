@@ -1,1 +1,1 @@
-from firefed.firefed import Firefed
+from firefed.session import Session

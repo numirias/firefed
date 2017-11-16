@@ -8,7 +8,7 @@ from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
 from tabulate import tabulate
 from getpass import getpass
 
-from firefed.feature import Feature, output_formats
+from firefed.feature import Feature, output_formats, argument
 from firefed.output import info, error
 
 
@@ -41,7 +41,7 @@ class NSSWrapper:
         nss.PR_ErrorToName.restype = ctypes.c_char_p
         nss.PK11_GetInternalKeySlot.restype = ctypes.c_void_p
         nss.PK11_CheckUserPassword.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-        res = self.nss.NSS_Init(bytes(path, 'utf-8'))
+        res = self.nss.NSS_Init(bytes(str(path), 'utf-8'))
         if res != 0:
             self.handle_error()
         keyslot = self.nss.PK11_GetInternalKeySlot()
@@ -81,36 +81,22 @@ class NSSWrapper:
 Login = collections.namedtuple('Login', 'host username password')
 
 
+@argument('-l', '--libnss', default='libnss3.so', help='path to libnss3')
+@argument('-p', '--master-password', help='profile\'s master password')
 @output_formats(['table', 'list', 'csv'], default='table')
 class Logins(Feature):
 
-    def add_arguments(parser):
-        parser.add_argument(
-            '-l',
-            '--libnss',
-            help='path to libnss3',
-            default='libnss3.so',
-        )
-        parser.add_argument(
-            '-p',
-            '--master-password',
-            help='profile\'s master password',
-        )
-
     def run(self):
-        args = self.args
         logins_json = self.load_json('logins.json')['logins']
         info('%d logins found.\n' % len(logins_json))
-        if args.summarize:
+        if self.summarize:
             return
-        if args.master_password is None:
-            master_password = getpass(prompt='Master password: ')
+        if self.master_password is None:
+            self.master_password = getpass(prompt='Master password: ')
             info()
-        else:
-            master_password = args.master_password
-        nss = NSSWrapper(args.libnss, self.ff.profile_dir)
+        nss = NSSWrapper(self.libnss, self.session.profile)
         try:
-            nss.check_password(master_password)
+            nss.check_password(self.master_password)
         except NSSError as e:
             if e.name == 'SEC_ERROR_BAD_PASSWORD':
                 error('Incorrect master password.')
@@ -139,4 +125,3 @@ class Logins(Feature):
         writer = csv.DictWriter(sys.stdout, fieldnames=Login._fields)
         writer.writeheader()
         writer.writerows([l._asdict() for l in logins])
-

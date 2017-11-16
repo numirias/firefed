@@ -15,7 +15,7 @@ class Permissions(SqliteTableFeature, Feature):
     fields = ['origin', 'type']
 
     def process_result(self, result):
-        if self.args.format == 'table':
+        if self.format == 'table':
             info(tabulate(result, headers=('Host', 'Permission')))
             return
         writer = csv.writer(sys.stdout)

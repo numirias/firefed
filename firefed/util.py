@@ -40,7 +40,10 @@ def profile_dir(name):
 def feature_map():
     from firefed.feature import Feature
     return OrderedDict(
-        sorted((m.__name__.lower(), m) for m in Feature.__subclasses__())
+        sorted(
+            ((m.__name__.lower(), m) for m in Feature.__subclasses__()),
+            key=(lambda x: x[0])
+        )
     )
 
 
