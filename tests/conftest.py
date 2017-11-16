@@ -38,7 +38,6 @@ def make_test_moz_lz4(profile_dir):
     with open(path, 'wb') as f:
         f.write(b'mozLz40\0' + compressed)
 
-
 @fixture
 def parser():
     return make_parser()
@@ -74,9 +73,6 @@ def mock_feature(mock_session, MockFeature):
 @fixture
 def MockFeature():
     class MockFeature(Feature):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.has_run = False
         def run(self):
-            self.has_run = True
+            pass
     return MockFeature
