@@ -1,6 +1,7 @@
 import argparse
 from collections import namedtuple
 import csv
+from datetime import datetime
 from io import StringIO
 from pathlib import Path
 import pytest
@@ -118,8 +119,7 @@ class TestFeatures:
         History(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
-        print(data)
-        assert len(data) == 3
+        assert len(data) == 4
         assert data[0] == ['url', 'title', 'last_visit_date', 'visit_count']
         assert ['http://two.example/', 'two', '2', '200'] in data
 
@@ -132,7 +132,7 @@ class TestFeatures:
         History(mock_session, format='short')()
         out, _ = capsys.readouterr()
         lines = out.split('\n')
-        assert lines == ['http://one.example/', 'http://two.example/', '']
+        assert 'http://one.example/' in lines
 
     def test_downloads(self, mock_session, capsys):
         Downloads(mock_session)()
@@ -153,9 +153,14 @@ class TestFeatures:
         lines = out.split('\n')
         assert 'bar' in lines
 
-    # def test_visits(self, mock_session, capsys):
-    #     Visits(mock_session)()
-    #     out, _ = capsys.readouterr()
-    #     lines = [line.split() for line in out.split('\n')]
-    #     assert any(line[1] == 'http://visited.example' for line in lines)
-        # TODO: Test timestamps
+    def test_visits(self, mock_session, capsys):
+        Visits(mock_session, format='list')()
+        out, _ = capsys.readouterr()
+        lines = out.split('\n')
+        assert '%s %s' % (datetime.fromtimestamp(1), 'http://one.example/') in lines
+
+        Visits(mock_session, format='csv')()
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert data[0] == ['id', 'from_visit', 'visit_date', 'url']
+        assert ['1', '2', '1', 'http://one.example/']

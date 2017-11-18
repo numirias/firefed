@@ -48,9 +48,10 @@ def make_places_sqlite(profile_dir):
     con = sqlite3.connect(str(path))
     cursor = con.cursor()
     cursor.executescript('''
-    CREATE TABLE moz_places (url, title, visit_count, last_visit_date);
-    INSERT INTO moz_places VALUES('http://one.example/', 'one', 100, 1000000);
-    INSERT INTO moz_places VALUES('http://two.example/', 'two', 200, 2000000);
+    CREATE TABLE moz_places (id, url, title, visit_count, last_visit_date);
+    INSERT INTO moz_places VALUES(1, 'http://one.example/', 'one', 100, 1000000);
+    INSERT INTO moz_places VALUES(2, 'http://two.example/', 'two', 200, 2000000);
+    INSERT INTO moz_places VALUES(3, 'http://three.example/', 'three', 300, 3000000);
 
     CREATE TABLE moz_annos (anno_attribute_id, content);
     INSERT INTO moz_annos VALUES(10,'file:///foo/bar');
@@ -64,6 +65,10 @@ def make_places_sqlite(profile_dir):
     CREATE TABLE moz_inputhistory (input);
     INSERT INTO moz_inputhistory VALUES('foo');
     INSERT INTO moz_inputhistory VALUES('bar');
+
+    CREATE TABLE moz_historyvisits (id, from_visit, visit_date, place_id);
+    INSERT INTO moz_historyvisits VALUES(1, 2, 1000000, 1);
+    INSERT INTO moz_historyvisits VALUES(2, 0, 1000000, 2);
     ''')
     con.close()
 
