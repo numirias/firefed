@@ -32,6 +32,42 @@ def make_permissions_sqlite(profile_dir):
     ''')
     con.close()
 
+def make_formhistory_sqlite(profile_dir):
+    path = Path(profile_dir) / 'formhistory.sqlite'
+    con = sqlite3.connect(str(path))
+    cursor = con.cursor()
+    cursor.executescript('''
+    CREATE TABLE moz_formhistory (id INTEGER PRIMARY KEY, fieldname TEXT NOT NULL, value TEXT NOT NULL, timesUsed INTEGER, firstUsed INTEGER, lastUsed INTEGER, guid TEXT);
+    INSERT INTO moz_formhistory VALUES(3,'aaa','bbb',70,1461722880950000,1496016155338000,'guid1');
+    INSERT INTO moz_formhistory VALUES(7,'ccc','ddd',68,1462027382316000,1510013515062000,'guid2');
+    ''')
+    con.close()
+
+def make_places_sqlite(profile_dir):
+    path = Path(profile_dir) / 'places.sqlite'
+    con = sqlite3.connect(str(path))
+    cursor = con.cursor()
+    cursor.executescript('''
+    CREATE TABLE moz_places (url, title, visit_count, last_visit_date);
+    INSERT INTO moz_places VALUES('http://one.example/', 'one', 100, 1000000);
+    INSERT INTO moz_places VALUES('http://two.example/', 'two', 200, 2000000);
+
+    CREATE TABLE moz_annos (anno_attribute_id, content);
+    INSERT INTO moz_annos VALUES(10,'file:///foo/bar');
+    INSERT INTO moz_annos VALUES(12,'nodownload');
+    INSERT INTO moz_annos VALUES(10,'file:///baz');
+
+    CREATE TABLE moz_hosts (host);
+    INSERT INTO moz_hosts VALUES('one.example');
+    INSERT INTO moz_hosts VALUES('two.example');
+
+    CREATE TABLE moz_inputhistory (input);
+    INSERT INTO moz_inputhistory VALUES('foo');
+    INSERT INTO moz_inputhistory VALUES('bar');
+    ''')
+    con.close()
+
+
 def make_test_moz_lz4(profile_dir):
     path = Path(profile_dir) / 'test_moz_lz4.lz4'
     compressed = lz4.block.compress(b'foo')
@@ -58,6 +94,8 @@ def mock_home(tmpdir_factory):
 def mock_profile(mock_home):
     profile_path = mock_home / '.mozilla/firefox/random.default'
     make_permissions_sqlite(profile_path)
+    make_formhistory_sqlite(profile_path)
+    make_places_sqlite(profile_path)
     make_test_sqlite(profile_path)
     make_test_moz_lz4(profile_path)
     return profile_path
@@ -70,7 +108,7 @@ def mock_session(mock_profile):
 def mock_feature(mock_session, MockFeature):
     return MockFeature(mock_session)
 
-@fixture
+@fixture(scope='function')
 def MockFeature():
     class MockFeature(Feature):
         def run(self):

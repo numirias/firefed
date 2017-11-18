@@ -16,12 +16,13 @@ Visit = namedtuple('Visit', 'id from_visit visit_date url')
 class Visits(Feature):
 
     def run(self):
-        con = sqlite3.connect(self.profile_path('places.sqlite'))
-        cursor = con.cursor()
-        result = cursor.execute(
-            'SELECT v.id, v.from_visit, v.visit_date, p.url FROM moz_historyvisits v JOIN moz_places p ON v.place_id = p.id'
+        res = self.exec_sqlite(
+            'places.sqlite',
+            '''SELECT v.id, v.from_visit, v.visit_date, p.url FROM
+            moz_historyvisits v JOIN moz_places p ON v.place_id = p.id
+            '''
         )
-        visits = [Visit(*row) for row in result]
+        visits = [Visit(*row) for row in res]
         visits.sort(key=lambda x: x.visit_date)
         self.build_format(visits)
 

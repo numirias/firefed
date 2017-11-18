@@ -1,15 +1,10 @@
 import pytest
 from unittest import mock
 import sys
-import csv
-from io import StringIO
 
 import firefed.__main__
 from firefed import Session
 
-
-def parse_csv(str_):
-    return list(csv.reader(StringIO(str_)))
 
 @pytest.fixture(scope='function')
 def feature(mock_profile, parser):
@@ -40,15 +35,3 @@ class TestMain:
     #         firefed.__main__.main()
 
 
-# class TestFeatures:
-
-#     def test_permissions(self, feature, capsys):
-#         feature('permissions', '--format', 'table')
-#         out, _ = capsys.readouterr()
-#         assert ['https://two.example/', 'permission2'] in (line.split() for line in out.split('\n'))
-#         feature('permissions', '--format', 'csv')
-#         out, _ = capsys.readouterr()
-#         data = parse_csv(out)
-#         assert len(data) == 4
-#         assert data[0] == ['host', 'permission']
-#         assert ['https://two.example/', 'permission2'] in data

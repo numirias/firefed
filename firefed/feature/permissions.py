@@ -2,22 +2,18 @@ import csv
 import sys
 from tabulate import tabulate
 
-from firefed.feature import Feature, SqliteTableFeature, output_formats
+from firefed.feature import Feature, output_formats, sqlite_data
 from firefed.output import info
 
 
 @output_formats(['table', 'csv'], default='table')
-class Permissions(SqliteTableFeature, Feature):
+class Permissions(Feature):
 
-    db_file = 'permissions.sqlite'
-    table_name = 'moz_perms'
-    num_text = '%s site permissions found.'
-    fields = ['origin', 'type']
-
-    def process_result(self, result):
+    @sqlite_data(db='permissions.sqlite', table='moz_perms', columns=['origin', 'type'])
+    def run(self, data):
         if self.format == 'table':
-            info(tabulate(result, headers=('Host', 'Permission')))
+            info(tabulate(data, headers=('Host', 'Permission')))
             return
         writer = csv.writer(sys.stdout)
         writer.writerow(('host', 'permission'))
-        writer.writerows(result)
+        writer.writerows(data)

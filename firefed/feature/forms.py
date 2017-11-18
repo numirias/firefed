@@ -1,14 +1,10 @@
-from firefed.feature import Feature, SqliteTableFeature
+from firefed.feature import Feature, sqlite_data
 from firefed.output import info
 
 
-class Forms(SqliteTableFeature, Feature):
+class Forms(Feature):
 
-    db_file = 'formhistory.sqlite'
-    table_name = 'moz_formhistory'
-    num_text = '%s form field entries found.'
-    fields = ['fieldname', 'value']
-
-    def process_result(self, result):
-        for field, val in result:
+    @sqlite_data(db='formhistory.sqlite', table='moz_formhistory', columns=['fieldname', 'value'])
+    def run(self, data):
+        for field, val in data:
             info('%s=%s' % (field, val))

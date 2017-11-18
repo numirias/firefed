@@ -17,7 +17,6 @@ def argument(*args, **kwargs):
         return cls
     return decorator
 
-
 def output_formats(choices, **kwargs):
     return argument(
         '-f',
@@ -26,6 +25,22 @@ def output_formats(choices, **kwargs):
         help='output format',
         **kwargs,
     )
+
+def sqlite_data(db, table, columns):
+    def decorator(func):
+        def wrapper(obj):
+            db_path = obj.profile_path(db)
+            if not db_path.exists():
+                print(db)
+                raise FileNotFoundError()
+            con = sqlite3.connect(str(db_path))
+            cursor = con.cursor()
+            res = cursor.execute('SELECT %s FROM %s' %
+                                 (','.join(columns), table)).fetchall()
+            con.close()
+            func(obj, res)
+        return wrapper
+    return decorator
 
 
 class NotMozLz4Exception(Exception):
@@ -81,6 +96,13 @@ class Feature(ABC):
         con.close()
         return result
 
+    def exec_sqlite(self, db_path, query):
+        con = sqlite3.connect(str(self.profile_path(db_path)))
+        cursor = con.cursor()
+        res = list(cursor.execute(query))
+        con.close()
+        return res
+
     def load_moz_lz4(self, path):
         with open(self.profile_path(path), 'rb') as f:
             if f.read(8) != b'mozLz40\0':
@@ -90,24 +112,3 @@ class Feature(ABC):
 
     def build_format(self, *args, **kwargs):
         getattr(self, 'build_%s' % self.format)(*args, **kwargs)
-
-
-class SqliteTableFeature(ABC):
-
-    def run(self):
-        con = sqlite3.connect(str(self.profile_path(self.db_file)))
-        cursor = con.cursor()
-        num = cursor.execute(
-            'SELECT COUNT(*) FROM %s' % self.table_name).fetchone()[0]
-        if hasattr(self, 'format') and self.format != 'csv':
-            info(self.num_text % num + '\n')
-        if hasattr(self, 'summarize') and self.summarize:
-            return
-        result = cursor.execute('SELECT %s FROM %s' %
-                                (','.join(self.fields), self.table_name)).fetchall()
-        con.close()
-        self.process_result(result)
-
-    @abstractmethod
-    def process_result(self, result):
-        pass

@@ -1,4 +1,4 @@
-from .feature import Feature, SqliteTableFeature, output_formats, argument
+from .feature import Feature, argument, output_formats, sqlite_data
 from .addons import Addons
 from .bookmarks import Bookmarks
 from .cookies import Cookies

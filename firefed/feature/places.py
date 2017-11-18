@@ -1,40 +1,31 @@
-from firefed.feature import Feature, SqliteTableFeature
+from firefed.feature import Feature, sqlite_data
 from firefed.output import info
 
 
-class Downloads(SqliteTableFeature, Feature):
+DOWNLOAD_TYPE = 10
 
-    db_file = 'places.sqlite'
-    table_name = 'moz_annos'
-    num_text = '%s downloads found.'
-    fields = ['anno_attribute_id', 'content']
 
-    def process_result(self, result):
-        for id, content in result:
-            if id != 10:
+class Downloads(Feature):
+
+    @sqlite_data(db='places.sqlite', table='moz_annos', columns=['anno_attribute_id', 'content'])
+    def run(self, data):
+        for id, content in data:
+            if id != DOWNLOAD_TYPE:
                 continue
             info('%s' % content)
 
 
-class Hosts(SqliteTableFeature, Feature):
+class Hosts(Feature):
 
-    db_file = 'places.sqlite'
-    table_name = 'moz_hosts'
-    num_text = '%s hosts found.'
-    fields = ['host']
-
-    def process_result(self, result):
-        for host in result:
+    @sqlite_data(db='places.sqlite', table='moz_hosts', columns=['host'])
+    def run(self, data):
+        for host in data:
             info('%s' % host)
 
 
-class InputHistory(SqliteTableFeature, Feature):
+class InputHistory(Feature):
 
-    db_file = 'places.sqlite'
-    table_name = 'moz_inputhistory'
-    num_text = '%s search bar input entries found.'
-    fields = ['input']
-
-    def process_result(self, result):
-        for input in result:
+    @sqlite_data(db='places.sqlite', table='moz_inputhistory', columns=['input'])
+    def run(self, data):
+        for input in data:
             info('%s' % input)
