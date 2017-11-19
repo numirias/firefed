@@ -1,11 +1,12 @@
+import csv
+from fnmatch import fnmatch
 import json
 import lz4
 import os
-from fnmatch import fnmatch
-import csv
+from pathlib import Path
 import sys
 
-from firefed.feature import Feature, output_formats
+from firefed.feature import Feature, output_formats, argument
 from firefed.output import info, error
 
 
@@ -23,7 +24,10 @@ class Cookie:
 
     def __init__(self, **kwargs):
         for field in self._fields:
-            setattr(self, field, kwargs[field])
+            try:
+                setattr(self, field, kwargs[field])
+            except KeyError:
+                setattr(self, field, None)
 
     def __str__(self):
         # Re-assemble cookies based rougly on the 'Set-Cookie' format
@@ -34,52 +38,54 @@ class Cookie:
             text += '; Secure'
         if self.http_only:
             text += '; HttpOnly'
-        if self.path != '/':
+        if self.path and self.path != '/':
             text += '; Path=%s' % self.path
         return text
 
+session_file_map = {
+    'recovery': Path('sessionstore-backups/recovery.jsonlz4'),
+    'previous': Path('sessionstore-backups/previous.jsonlz4'),
+    'sessionstore': Path('sessionstore.jsonlz4'),
+}
 
 def session_file(key):
-    session_file_map = {
-        'recovery': os.path.join('sessionstore-backups', 'recovery.jsonlz4'),
-        'previous': os.path.join('sessionstore-backups', 'previous.jsonlz4'),
-        'sessionstore': 'sessionstore.jsonlz4',
-    }
     try:
         return session_file_map[key]
     except KeyError:
-        return key
+        return Path(key)
 
 
 @output_formats(['list', 'csv'], default='list')
+@argument('-H', '--host', help='filter by hostname (glob)')
+@argument('-s', '--session-file', type=session_file, help='extract cookies \
+          from session file (you can use %s as shortcuts for default file \
+          locations)' % ', '.join('"%s"' % s for s in session_file_map))
 class Cookies(Feature):
 
-    def add_arguments(parser):
-        parser.add_argument(
-            '-H',
-            '--host',
-            help='glob for matching host name',
-        )
-        parser.add_argument(
-            '-s',
-            '--session-file',
-            type=session_file,
-            help='extract cookies from session file ("recovery", "previous", "sessionstore" are shortcuts for default file locations)',
-        )
-
     def run(self):
-        if self.args.session_file:
+        if self.session_file:
             try:
-                cookies = self.load_ss_cookies(self.args.session_file)
+                cookies = self.load_ss_cookies(self.session_file)
             except FileNotFoundError as e:
-                error('File "%s" not found.' % e.filename)
+                error('Session file "%s" not found.' % e.filename)
                 return
         else:
             cookies = self.load_sqlite('cookies.sqlite', 'moz_cookies', Cookie)
-        host_pattern = self.args.host
-        if host_pattern:
-            cookies = [c for c in cookies if fnmatch(c.host, host_pattern)]
+        if self.host:
+            cookies = [c for c in cookies if fnmatch(c.host, self.host)]
         self.build_format(cookies)
+
+    def load_ss_cookies(self, path):
+        data = json.loads(self.load_mozlz4(path))
+        cookies = data['cookies']
+        return [Cookie(
+            host=cookie['host'],
+            name=cookie['name'],
+            value=cookie['value'],
+            path=cookie['path'] if 'path' in cookie else None,
+            secure=cookie['secure'] if 'secure' in cookie else False,
+            http_only=cookie['httponly'] if 'httponly' in cookie else False,
+        ) for cookie in cookies]
 
     def build_list(self, cookies):
         for cookie in cookies:
@@ -90,15 +96,3 @@ class Cookies(Feature):
         writer.writerow(Cookie._fields)
         for cookie in cookies:
             writer.writerow((getattr(cookie, key) for key in Cookie._fields))
-
-    def load_ss_cookies(self, path):
-        data = json.loads(self.load_moz_lz4(path))
-        cookies = data['cookies']
-        return [Cookie(
-            host=cookie['host'],
-            name=cookie['name'],
-            value=cookie['value'],
-            path=cookie['path'],
-            secure=cookie['secure'] if 'secure' in cookie else False,
-            http_only=cookie['httponly'] if 'httponly' in cookie else False,
-        ) for cookie in cookies]

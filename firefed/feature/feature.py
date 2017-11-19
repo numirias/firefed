@@ -103,7 +103,7 @@ class Feature(ABC):
         con.close()
         return res
 
-    def load_moz_lz4(self, path):
+    def load_mozlz4(self, path):
         with open(self.profile_path(path), 'rb') as f:
             if f.read(8) != b'mozLz40\0':
                 raise NotMozLz4Exception('Not Mozilla lz4 format.')

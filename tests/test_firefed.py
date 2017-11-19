@@ -7,8 +7,9 @@ from pathlib import Path
 import pytest
 
 from firefed import Session
-from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits
+from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies
 from firefed.feature.feature import NotMozLz4Exception
+from firefed.feature.cookies import Cookie, session_file
 
 
 def parse_csv(str_):
@@ -61,9 +62,9 @@ class TestFeature:
         foos = mock_feature.load_sqlite('test_sqlite.sqlite', 't1', Foo)
         assert Foo(c1='r1v1', c2='r1v2') in foos
 
-        assert mock_feature.load_moz_lz4('test_moz_lz4.lz4') == b'foo'
+        assert mock_feature.load_mozlz4('test_mozlz4.lz4') == b'foo'
         with pytest.raises(NotMozLz4Exception):
-            mock_feature.load_moz_lz4('test_json.json')
+            mock_feature.load_mozlz4('test_json.json')
 
     def test_exec_sqlite(self, mock_feature):
         res = mock_feature.exec_sqlite('test_sqlite.sqlite', 'SELECT c2 from t1')
@@ -164,3 +165,34 @@ class TestFeatures:
         data = parse_csv(out)
         assert data[0] == ['id', 'from_visit', 'visit_date', 'url']
         assert ['1', '2', '1', 'http://one.example/']
+
+    def test_cookies(self, mock_session, capsys):
+        cookie = Cookie(name='foo', value='bar')
+        assert str(cookie) == 'foo=bar'
+
+        cookie = Cookie(name='foo', value='bar', host='one.example', path='/baz', secure=True, http_only=True)
+        assert all(x in str(cookie).lower() for x in ['foo=bar', 'path=/baz', 'secure', 'httponly', 'domain=one.example'])
+
+        Cookies(mock_session, session_file=None, host=None, format='list')()
+        out, _ = capsys.readouterr()
+        assert any(line.startswith('k1=v1') for line in out.split('\n'))
+
+        feature = Cookies(mock_session)
+        cookies = feature.load_ss_cookies('sessionstore.jsonlz4')
+        assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example') for c in cookies)
+
+        Cookies(mock_session, session_file=None, host='tw*.example', format='list')()
+        out, _ = capsys.readouterr()
+        assert out.startswith('k2=v2')
+
+        assert session_file('sessionstore') == session_file('sessionstore.jsonlz4')
+        assert session_file('sessionstore') != session_file('nonexistent')
+
+        Cookies(mock_session, session_file='nonexistent', host=None, format='list')()
+        out, _ = capsys.readouterr()
+        assert 'not found' in out
+
+        Cookies(mock_session, session_file=None, host=None, format='csv')()
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert ['k1', 'v1', 'one.example', '/', '1', '0'] in data

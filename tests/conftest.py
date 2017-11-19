@@ -3,11 +3,14 @@ from pytest import fixture
 import shutil
 import sqlite3
 import lz4
+import json
 
 from firefed import Session
 from firefed.feature import Feature
 from firefed.util import make_parser
 
+
+# TODO: Refactor make_*_sqlite
 
 def make_test_sqlite(profile_dir):
     path = Path(profile_dir) / 'test_sqlite.sqlite'
@@ -72,10 +75,40 @@ def make_places_sqlite(profile_dir):
     ''')
     con.close()
 
+def make_cookies_sqlite(profile_dir):
+    path = Path(profile_dir) / 'cookies.sqlite'
+    con = sqlite3.connect(str(path))
+    cursor = con.cursor()
+    cursor.executescript('''
+    CREATE TABLE moz_cookies (name, value, host, path, isSecure, isHttpOnly);
+    INSERT INTO moz_cookies VALUES('k1', 'v1', 'one.example', '/', 1, 0);
+    INSERT INTO moz_cookies VALUES('k2', 'v2', 'two.example', '/p2', 0, 1);
+    ''')
 
-def make_test_moz_lz4(profile_dir):
-    path = Path(profile_dir) / 'test_moz_lz4.lz4'
+def make_test_mozlz4(profile_dir):
+    path = Path(profile_dir) / 'test_mozlz4.lz4'
     compressed = lz4.block.compress(b'foo')
+    with open(path, 'wb') as f:
+        f.write(b'mozLz40\0' + compressed)
+
+def make_sessionstore_jsonlz4(profile_dir):
+    path = Path(profile_dir) / 'sessionstore.jsonlz4'
+    data = {
+        'cookies': [
+            {
+                'name': 'sk1',
+                'value': 'sv1',
+                'host': 'one.example',
+            },
+            {
+                'name': 'sk2',
+                'value': 'sv2',
+                'host': 'two.example',
+            },
+        ]
+    }
+    json_bytes = bytes(json.dumps(data), 'utf-8')
+    compressed = lz4.block.compress(json_bytes)
     with open(path, 'wb') as f:
         f.write(b'mozLz40\0' + compressed)
 
@@ -101,8 +134,10 @@ def mock_profile(mock_home):
     make_permissions_sqlite(profile_path)
     make_formhistory_sqlite(profile_path)
     make_places_sqlite(profile_path)
+    make_cookies_sqlite(profile_path)
     make_test_sqlite(profile_path)
-    make_test_moz_lz4(profile_path)
+    make_test_mozlz4(profile_path)
+    make_sessionstore_jsonlz4(profile_path)
     return profile_path
 
 @fixture
