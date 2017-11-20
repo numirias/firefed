@@ -8,7 +8,7 @@ from urllib.parse import quote
 from distutils.version import LooseVersion
 from tabulate import tabulate
 
-from firefed.feature import Feature, output_formats
+from firefed.feature import Feature, output_formats, argument
 from firefed.output import good, bad, info, error
 
 
@@ -32,27 +32,12 @@ Addon = collections.namedtuple('Addon', 'id name version enabled signed visible'
 
 
 @output_formats(['table', 'list', 'csv'], default='table')
+@argument( '-i', '--id', help='select specific addon by id')
+@argument( '-V', '--firefox-version', help='Firefox version to check updates against',)
+@argument( '-o', '--outdated',  action='store_true',help='[experimental] check if addons are outdated (queries the addons.mozilla.org API)')
 class Addons(Feature):
 
     update_check_url = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}'
-
-    def add_arguments(parser):
-        parser.add_argument(
-            '-o',
-            '--outdated',
-            help='[experimental] check if addons are outdated (queries the addons.mozilla.org API)',
-            action='store_true',
-        )
-        parser.add_argument(
-            '-i',
-            '--id',
-            help='select specific addon by id',
-        )
-        parser.add_argument(
-            '-v',
-            '--firefox-version',
-            help='Firefox version to check updates against',
-        )
 
     def run(self):
         args = self.args

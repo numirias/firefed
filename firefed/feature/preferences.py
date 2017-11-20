@@ -3,7 +3,7 @@ import requests
 from collections import defaultdict
 from tabulate import tabulate
 
-from firefed.feature import Feature
+from firefed.feature import Feature, argument
 from firefed.output import info, good, bad
 
 
@@ -41,21 +41,9 @@ class Preference:
                 return val[1:-1]
 
 
+@argument( '-r', '--recommended', default='userjs-relaxed', help='path to user.js file with recommended settings (use "userjs-master" or "userjs-relaxed" to load userjs config from Github)',)
+@argument( '-c', '--check', action='store_true', help='check preferences for dubious settings')
 class Preferences(Feature):
-
-    def add_arguments(parser):
-        parser.add_argument(
-            '-r',
-            '--recommended',
-            default='userjs-relaxed',
-            help='path to user.js file with recommended settings (use "userjs-master" or "userjs-relaxed" to load userjs config from Github)',
-        )
-        parser.add_argument(
-            '-c',
-            '--check',
-            help='check preferences for dubious settings',
-            action='store_true',
-        )
 
     def run(self):
         prefs = list(self.parse_prefs())

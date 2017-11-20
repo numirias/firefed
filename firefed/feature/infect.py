@@ -5,7 +5,7 @@ from zipfile import ZipFile
 from pathlib import Path
 import lz4
 
-from firefed.feature import Feature
+from firefed.feature import Feature, argument
 from firefed.output import error, info, good, bad
 
 
@@ -93,30 +93,10 @@ def make_addon_entry(path):
     return entry
 
 
+@argument( '-u', '--uninstall', help='uninstall infection', action='store_true', default=False,)
+@argument( '-c', '--check', help='check if profile appears infected', action='store_true', default=False,)
+@argument( '-y', '--yes', help='don\'t prompt for confirmation', action='store_true', default=False,)
 class Infect(Feature):
-
-    def add_arguments(parser):
-        parser.add_argument(
-            '-u',
-            '--uninstall',
-            help='uninstall infection',
-            action='store_true',
-            default=False,
-        )
-        parser.add_argument(
-            '-c',
-            '--check',
-            help='check if profile appears infected',
-            action='store_true',
-            default=False,
-        )
-        parser.add_argument(
-            '-y',
-            '--yes',
-            help='don\'t prompt for confirmation',
-            action='store_true',
-            default=False,
-        )
 
     def run(self):
         self.read_extensions_json()
