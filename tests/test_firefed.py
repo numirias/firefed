@@ -196,3 +196,18 @@ class TestFeatures:
         out, _ = capsys.readouterr()
         data = parse_csv(out)
         assert ['k1', 'v1', 'one.example', '/', '1', '0'] in data
+
+    def test_bookmarks(self, mock_session, capsys):
+        Bookmarks(mock_session, format='list')()
+        out, _ = capsys.readouterr()
+        assert 'bookmark in level2' in out.split('\n')
+
+        Bookmarks(mock_session, format='csv')()
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert ['bookmark in level2', 'http://two.example/', '5', '55'] in data
+
+        Bookmarks(mock_session, format='tree')()
+        out, _ = capsys.readouterr()
+        assert 'http://one.example' in out
+        # TODO Tests could be improved, esp. for tree output

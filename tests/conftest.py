@@ -72,6 +72,14 @@ def make_places_sqlite(profile_dir):
     CREATE TABLE moz_historyvisits (id, from_visit, visit_date, place_id);
     INSERT INTO moz_historyvisits VALUES(1, 2, 1000000, 1);
     INSERT INTO moz_historyvisits VALUES(2, 0, 1000000, 2);
+
+    CREATE TABLE moz_bookmarks (id, parent, type, fk, title, guid, dateAdded, lastModified);
+    INSERT INTO moz_bookmarks VALUES(1, 0, 2, 0, '', 'root________', 1000000, 11000000);
+    INSERT INTO moz_bookmarks VALUES(2, 1, 2, 0, 'rootfolder', 'guid2', 3000000, 33000000);
+    INSERT INTO moz_bookmarks VALUES(3, 2, 1, 1, 'bookmark in rootfolder', 'guid3', 2000000, 22000000);
+    INSERT INTO moz_bookmarks VALUES(4, 2, 2, 0, 'level2', 'guid4', 4000000, 44000000);
+    INSERT INTO moz_bookmarks VALUES(5, 4, 1, 2, 'bookmark in level2', 'guid5', 5000000, 55000000);
+    INSERT INTO moz_bookmarks VALUES(6, 4, 1, 3, '', 'guid6', 6000000, 66000000);
     ''')
     con.close()
 
