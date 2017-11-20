@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from firefed import Session
-from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies
+from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies, Addons
 from firefed.feature.feature import NotMozLz4Exception
 from firefed.feature.cookies import Cookie, session_file
 
@@ -211,3 +211,40 @@ class TestFeatures:
         out, _ = capsys.readouterr()
         assert 'http://one.example' in out
         # TODO Tests could be improved, esp. for tree output
+
+    def test_addons(self, mock_session, capsys):
+        Addons(mock_session, format='csv', outdated=None, id=None, summarize=None)()
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert data[0] == ['id', 'name', 'version', 'enabled', 'signed', 'visible']
+        assert ['foo@bar', 'fooextension', '1.2.3', 'True', 'preliminary', 'True'] in data
+        assert ['bar@baz', 'barextension', '0.1rc', 'False', '', 'False'] in data
+
+        Addons(mock_session, format='list', outdated=None, id=None, summarize=None)()
+        out, _ = capsys.readouterr()
+        assert out.startswith('fooextension')
+        assert all(x in out for x in ['preliminary', '[enabled]'])
+
+        Addons(mock_session, format='table', outdated=None, id=None, summarize=None)()
+        out, _ = capsys.readouterr()
+        assert 'fooextension' in out
+        assert 'barextension' in out
+
+    def test_addons_by_id(self, mock_session, capsys):
+        Addons(mock_session, format='csv', outdated=None, id='foo@bar', summarize=None)()
+        out, _ = capsys.readouterr()
+        assert 'fooextension' in out
+        assert 'barextension' not in out
+
+    def test_addons_errors(self, mock_session):
+        # Can't check outdated without version
+        with pytest.raises(SystemExit) as e:
+            Addons(mock_session, format='table', outdated=True, id=None, summarize=None)()
+        assert e.value.code == 1
+
+        # Can't check outdated if not list format
+        with pytest.raises(SystemExit) as e:
+            Addons(mock_session, format='list', outdated=True, id=None, summarize=None, firefox_version=None)()
+        assert e.value.code == 1
+
+        # TODO Add outdated tests

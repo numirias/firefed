@@ -9,7 +9,7 @@ from distutils.version import LooseVersion
 from tabulate import tabulate
 
 from firefed.feature import Feature, output_formats, argument
-from firefed.output import good, bad, info, error
+from firefed.output import good, bad, okay, info, fatal
 
 
 # See constants defined in [1]
@@ -23,10 +23,8 @@ SIGNED_STATES = {
     4: 'privileged'
 }
 
-
 def signed_state(text):
     return good(text) if text in (v for k, v in SIGNED_STATES.items() if k > 0) else bad(text)
-
 
 Addon = collections.namedtuple('Addon', 'id name version enabled signed visible')
 
@@ -40,20 +38,19 @@ class Addons(Feature):
     update_check_url = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}'
 
     def run(self):
-        args = self.args
-        if args.outdated and args.format != 'list':
-            error('--outdated can only be used with list format (--format list).')
-            return
-        if args.outdated and args.firefox_version is None:
-            error('--outdated needs a version (--firefox-version) to check against.')
-            return
+        if self.outdated and self.format != 'list':
+            fatal('--outdated can only be used with list format (--format list).')
+        if self.outdated and self.firefox_version is None:
+            fatal('--outdated needs a version (--firefox-version) to check against.')
         addons = list(self.load_addons())
-        if args.id:
-            addons = [a for a in addons if a.id == args.id]
-        info('%d addons found. (%d enabled)\n' %
-             (len(addons), sum(a.enabled for a in addons)))
-        if args.summarize:
-            return
+        # TODO metavar id -> addon_id
+        if self.id:
+            addons = [a for a in addons if a.id == self.id]
+        # TODO: Enable summary
+        # info('%d addons found. (%d enabled)\n' %
+        #      (len(addons), sum(a.enabled for a in addons)))
+        # if self.summarize:
+        #     return
         addons.sort(key=lambda a: not a.enabled)
         self.build_format(addons)
 
@@ -75,17 +72,16 @@ class Addons(Feature):
             )
 
     def build_list(self, addons):
-        args = self.args
         for addon in addons:
             enabled = good('[enabled]') if addon.enabled else bad('[disabled]')
             signed = signed_state(addon.signed) if addon.signed is not None \
                                                 else '(empty)'
             visible = '' if addon.visible else bad('[invisible]')
             info('%s (%s) %s %s' % (addon.name, addon.id, enabled, visible))
-            if args.outdated:
-                latest = self.check_outdated(addon, self.args.firefox_version)
+            if self.outdated:
+                latest = self.check_outdated(addon, self.firefox_version)
                 if latest is None:
-                    outdated_text = '(no version found)'
+                    outdated_text = okay('(no version found)')
                 else:
                     outdated = LooseVersion(latest) > LooseVersion(addon.version)
                     outdated_text = bad('(outdated, latest: %s)' % latest) if \

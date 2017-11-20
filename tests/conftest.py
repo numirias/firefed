@@ -120,6 +120,34 @@ def make_sessionstore_jsonlz4(profile_dir):
     with open(path, 'wb') as f:
         f.write(b'mozLz40\0' + compressed)
 
+def make_extensions_json(profile_dir):
+    path = Path(profile_dir) / 'extensions.json'
+    data = {
+        'addons': [
+            {
+                'id': 'foo@bar',
+                'defaultLocale': {
+                    'name': 'fooextension',
+                },
+                'version': '1.2.3',
+                'active': True,
+                'signedState': 1,
+                'visible': True,
+            },
+            {
+                'id': 'bar@baz',
+                'defaultLocale': {
+                    'name': 'barextension',
+                },
+                'version': '0.1rc',
+                'active': False,
+                'visible': False,
+            }
+        ],
+    }
+    with open(path, 'w') as f:
+        f.write(json.dumps(data))
+
 @fixture
 def parser():
     return make_parser()
@@ -146,6 +174,7 @@ def mock_profile(mock_home):
     make_test_sqlite(profile_path)
     make_test_mozlz4(profile_path)
     make_sessionstore_jsonlz4(profile_path)
+    make_extensions_json(profile_path)
     return profile_path
 
 @fixture
