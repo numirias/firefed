@@ -8,6 +8,10 @@ init()
 def error(text):
     print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL)
 
+def fatal(text):
+    error(text)
+    raise SystemExit(1)
+
 def info(*args, **kwargs):
     print(*args, **kwargs)
 
