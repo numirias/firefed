@@ -148,6 +148,29 @@ def make_extensions_json(profile_dir):
     with open(path, 'w') as f:
         f.write(json.dumps(data))
 
+def make_logins_json(profile_dir):
+    path = Path(profile_dir) / 'logins.json'
+    data = {
+        "logins": [
+            {
+                "id": 1,
+                "hostname": "http://one.example",
+                "formSubmitURL": "http://one.example",
+                "usernameField": "username",
+                "passwordField": "password",
+                "encryptedUsername": "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECA55nTfQgZCkBAgL7cdTHY5pyQ==",
+                "encryptedPassword": "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECLByVk//ztL9BAj2IUeTu9MZvA==",
+                "encType": 1,
+                "timeCreated": 1000000,
+                "timeLastUsed": 11000000,
+                "timePasswordChanged": 111000000,
+                "timesUsed": 2
+            },
+        ],
+    }
+    with open(path, 'w') as f:
+        f.write(json.dumps(data))
+
 @fixture
 def parser():
     return make_parser()
@@ -175,6 +198,7 @@ def mock_profile(mock_home):
     make_test_mozlz4(profile_path)
     make_sessionstore_jsonlz4(profile_path)
     make_extensions_json(profile_path)
+    make_logins_json(profile_path)
     return profile_path
 
 @fixture
