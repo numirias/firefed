@@ -5,4 +5,5 @@ install:
     - pip install pipenv --upgrade
     - pipenv install --dev --skip-lock
 script:
-    pipenv run pytest tests/
+    - pipenv run pytest --cov firefed tests/
+    - pipenv run codecov

@@ -17,3 +17,5 @@ requests = "*"
 
 yapf = "*"
 pytest = "*"
+codecov = "*"
+pytest-cov = "*"
