@@ -6,7 +6,7 @@ from pathlib import Path
 import lz4
 
 from firefed.feature import Feature, argument
-from firefed.output import error, info, good, bad
+from firefed.output import error, info, good, bad, fatal
 
 
 startup_key = 'app-system-defaults'
@@ -93,9 +93,9 @@ def make_addon_entry(path):
     return entry
 
 
-@argument( '-u', '--uninstall', help='uninstall infection', action='store_true', default=False,)
-@argument( '-c', '--check', help='check if profile appears infected', action='store_true', default=False,)
-@argument( '-y', '--yes', help='don\'t prompt for confirmation', action='store_true', default=False,)
+@argument( '-u', '--uninstall', help='uninstall malicious addon', action='store_true', default=False, dest='want_uninstall')
+@argument( '-c', '--check', help='check if profile appears infected', action='store_true', default=False, dest='want_check')
+@argument( '-y', '--yes', help='don\'t prompt for confirmation', action='store_true', default=False)
 class Infect(Feature):
 
     def run(self):
@@ -103,9 +103,9 @@ class Infect(Feature):
         self.read_addon_startup_json()
         addons = self.extensions_json['addons']
         addon = next((addon for addon in addons if addon['id'] == addon_id), None)
-        if self.args.uninstall:
+        if self.want_uninstall:
             self.uninstall(addon)
-        elif self.args.check:
+        elif self.want_check:
             self.check(addon)
         else:
             self.install(addon)
@@ -127,33 +127,30 @@ class Infect(Feature):
         try:
             addons.remove(addon)
         except ValueError:
-            error('Can\'t remove addon entry from "extensions.json". No entry found.')
-        else:
-            self.write_extensions_json()
+            fatal('Can\'t remove addon entry from "extensions.json". No entry found.')
+        self.write_extensions_json()
         try:
             del self.addon_startup_json[startup_key]['addons'][addon_id]
         except KeyError as e:
-            error('Can\'t remove addon entry from "%s". No entry found.' % ADDON_STARTUP_FILE)
-        else:
-            self.write_addon_startup_json()
+            fatal('Can\'t remove addon entry from "%s". No entry found.' % ADDON_STARTUP_FILE)
+        self.write_addon_startup_json()
         target = self.profile_path(os.path.join(EXTENSIONS_DIR, addon_filename))
         try:
             os.remove(target)
         except FileNotFoundError as e:
-            error('Can\'t remove XPI. File not found.')
+            fatal('Can\'t remove XPI. File not found.')
 
     def install(self, addon):
-        if not self.args.yes:
-            info('Are you sure you want to infect profile "%s"? (y/N)' % self.ff.profile_dir)
+        if not self.yes:
+            info('Are you sure you want to infect profile "%s"? (y/N)' % self.session.profile)
             if input().lower() not in ['y', 'yes']:
-                print('Cancelled.')
-                return
+                fatal('Cancelled.')
         info('Installing...')
         if addon is not None:
             error('Addon entry "%s" already exists.' % addon_id)
         else:
             addons = self.extensions_json['addons']
-            addons.append(make_addon_entry(self.ff.profile_dir))
+            addons.append(make_addon_entry(self.session.profile))
             self.write_extensions_json()
 
         startup = self.addon_startup_json

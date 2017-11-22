@@ -120,6 +120,20 @@ def make_sessionstore_jsonlz4(profile_dir):
     with open(path, 'wb') as f:
         f.write(b'mozLz40\0' + compressed)
 
+def make_addon_startup_jsonlz4(profile_dir):
+    path = Path(profile_dir) / 'addonStartup.json.lz4'
+    data = {
+        'app-system-defaults': {
+            'addons': {
+                'foo@bar': {},
+            }
+        }
+    }
+    json_bytes = bytes(json.dumps(data), 'utf-8')
+    compressed = lz4.block.compress(json_bytes)
+    with open(path, 'wb') as f:
+        f.write(b'mozLz40\0' + compressed)
+
 def make_extensions_json(profile_dir):
     path = Path(profile_dir) / 'extensions.json'
     data = {
@@ -171,6 +185,16 @@ def make_logins_json(profile_dir):
     with open(path, 'w') as f:
         f.write(json.dumps(data))
 
+def make_prefs_js(profile_dir):
+    path = Path(profile_dir) / 'prefs.js'
+    data = '''
+    user_pref("foo.bar", false);
+    user_pref("baz", 123);
+    user_pref("abc", "def");
+    '''
+    with open(path, 'w') as f:
+        f.write(data)
+
 @fixture
 def parser():
     return make_parser()
@@ -197,8 +221,10 @@ def mock_profile(mock_home):
     make_test_sqlite(profile_path)
     make_test_mozlz4(profile_path)
     make_sessionstore_jsonlz4(profile_path)
+    make_addon_startup_jsonlz4(profile_path)
     make_extensions_json(profile_path)
     make_logins_json(profile_path)
+    make_prefs_js(profile_path)
     return profile_path
 
 @fixture

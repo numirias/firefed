@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from firefed import Session
-from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies, Addons
+from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies, Addons, Logins, Preferences, Infect
 from firefed.feature.feature import NotMozLz4Exception
 from firefed.feature.cookies import Cookie, session_file
 
@@ -247,4 +247,24 @@ class TestFeatures:
             Addons(mock_session, format='list', outdated=True, id=None, summarize=None, firefox_version=None)()
         assert e.value.code == 1
 
-        # TODO Add outdated tests
+        # TODO Add --outdated tests
+
+    def test_logins(self, mock_session):
+        Logins(mock_session, master_password='', summarize=None, libnss='libnss3.so', format='table')()
+        # TODO More feature tests
+        # TODO Tests for missing libnss
+
+    def test_preferences(self, mock_session, capsys):
+        Preferences(mock_session, summarize=None, check=None, recommended=None)()
+        out, _ = capsys.readouterr()
+        lines = out.split('\n')
+        assert 'foo.bar = false' in lines
+        assert 'baz = 123' in lines
+        assert 'abc = "def"' in lines
+        # TODO More feature tests
+
+    def test_infect(self, mock_session, capsys):
+        Infect(mock_session, summarize=None, want_check=True, want_uninstall=None, recommended=None, yes=None)()
+        out, _ = capsys.readouterr()
+        assert 'doesn\'t seem fully installed' in out
+        # TODO More feature tests

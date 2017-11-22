@@ -48,13 +48,13 @@ class Preferences(Feature):
     def run(self):
         prefs = list(self.parse_prefs())
         info('%d custom preferences found.\n' % len(prefs))
-        if self.args.summarize:
+        if self.summarize:
             return
-        if not self.args.check:
+        if not self.check:
             for pref in prefs:
                 info(pref)
             return
-        prefs_rec = list(self.parse_userjs(self.args.recommended))
+        prefs_rec = list(self.parse_userjs(self.recommended))
         for pref in prefs:
             try:
                 pref_rec = next((p for p in prefs_rec if p.key == pref.key))
