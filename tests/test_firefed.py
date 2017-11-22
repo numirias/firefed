@@ -10,11 +10,11 @@ from firefed import Session
 from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies, Addons, Logins, Preferences, Infect
 from firefed.feature.feature import NotMozLz4Exception
 from firefed.feature.cookies import Cookie, session_file
+from firefed.util import profile_dir
 
 
 def parse_csv(str_):
     return list(csv.reader(StringIO(str_)))
-
 
 class TestFeature:
 
@@ -96,44 +96,7 @@ class TestFeature:
         with pytest.raises(FileNotFoundError):
             SomeFeature2(mock_session)()
 
-
-class TestFeatures:
-
-    def test_permissions(self, mock_session, capsys):
-        Permissions(mock_session, format='table')()
-        out, _ = capsys.readouterr()
-        assert ['https://two.example/', 'permission2'] in (line.split() for line in out.split('\n'))
-        Permissions(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
-        assert len(data) == 4
-        assert data[0] == ['host', 'permission']
-        assert ['https://two.example/', 'permission2'] in data
-
-    def test_forms(self, mock_session, capsys):
-        Forms(mock_session)()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
-        assert 'ccc=ddd' in lines
-
-    def test_history(self, mock_session, capsys):
-        History(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
-        assert len(data) == 4
-        assert data[0] == ['url', 'title', 'last_visit_date', 'visit_count']
-        assert ['http://two.example/', 'two', '2', '200'] in data
-
-        History(mock_session, format='list')()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
-        assert 'http://two.example/' in lines
-        assert '    Visits:     200' in lines
-
-        History(mock_session, format='short')()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
-        assert 'http://one.example/' in lines
+class TestSmallFeatures:
 
     def test_downloads(self, mock_session, capsys):
         Downloads(mock_session)()
@@ -154,7 +117,49 @@ class TestFeatures:
         lines = out.split('\n')
         assert 'bar' in lines
 
-    def test_visits(self, mock_session, capsys):
+    def test_forms(self, mock_session, capsys):
+        Forms(mock_session)()
+        out, _ = capsys.readouterr()
+        lines = out.split('\n')
+        assert 'ccc=ddd' in lines
+
+class TestPermissionsFeature:
+
+    def test_permissions_formats(self, mock_session, capsys):
+        Permissions(mock_session, format='table')()
+        out, _ = capsys.readouterr()
+        assert ['https://two.example/', 'permission2'] in (line.split() for line in out.split('\n'))
+        Permissions(mock_session, format='csv')()
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert len(data) == 4
+        assert data[0] == ['host', 'permission']
+        assert ['https://two.example/', 'permission2'] in data
+
+class TestHistoryFeature:
+
+    def test_history_formats(self, mock_session, capsys):
+        History(mock_session, format='csv')()
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert len(data) == 4
+        assert data[0] == ['url', 'title', 'last_visit_date', 'visit_count']
+        assert ['http://two.example/', 'two', '2', '200'] in data
+
+        History(mock_session, format='list')()
+        out, _ = capsys.readouterr()
+        lines = out.split('\n')
+        assert 'http://two.example/' in lines
+        assert '    Visits:     200' in lines
+
+        History(mock_session, format='short')()
+        out, _ = capsys.readouterr()
+        lines = out.split('\n')
+        assert 'http://one.example/' in lines
+
+class TestVisitsFeature:
+
+    def test_visits_formats(self, mock_session, capsys):
         Visits(mock_session, format='list')()
         out, _ = capsys.readouterr()
         lines = out.split('\n')
@@ -165,6 +170,8 @@ class TestFeatures:
         data = parse_csv(out)
         assert data[0] == ['id', 'from_visit', 'visit_date', 'url']
         assert ['1', '2', '1', 'http://one.example/']
+
+class TestCookiesFeature:
 
     def test_cookies(self, mock_session, capsys):
         cookie = Cookie(name='foo', value='bar')
@@ -197,6 +204,8 @@ class TestFeatures:
         data = parse_csv(out)
         assert ['k1', 'v1', 'one.example', '/', '1', '0'] in data
 
+class TestBookmarksFeature:
+
     def test_bookmarks(self, mock_session, capsys):
         Bookmarks(mock_session, format='list')()
         out, _ = capsys.readouterr()
@@ -211,6 +220,8 @@ class TestFeatures:
         out, _ = capsys.readouterr()
         assert 'http://one.example' in out
         # TODO Tests could be improved, esp. for tree output
+
+class TestAddonsFeature:
 
     def test_addons(self, mock_session, capsys):
         Addons(mock_session, format='csv', outdated=None, id=None, summarize=None)()
@@ -246,13 +257,48 @@ class TestFeatures:
         with pytest.raises(SystemExit) as e:
             Addons(mock_session, format='list', outdated=True, id=None, summarize=None, firefox_version=None)()
         assert e.value.code == 1
-
         # TODO Add --outdated tests
 
-    def test_logins(self, mock_session):
-        Logins(mock_session, master_password='', summarize=None, libnss='libnss3.so', format='table')()
-        # TODO More feature tests
-        # TODO Tests for missing libnss
+class TestLoginsFeature:
+
+    def test_formats(self, mock_session, capsys):
+        defaults = dict(master_password='master', summarize=None, libnss='libnss3.so')
+
+        Logins(mock_session, **defaults, format='table')()
+        out, _ = capsys.readouterr()
+        assert all(x in out for x in ['foo', 'bar'])
+
+        Logins(mock_session, **defaults, format='list')()
+        out, _ = capsys.readouterr()
+        assert all(x in out for x in ['foo', 'bar'])
+
+        Logins(mock_session, **defaults, format='csv')()
+        out, _ = capsys.readouterr()
+        data = parse_csv(out)
+        assert ['http://one.example', 'foo', 'bar'] in data
+
+    def test_no_libnss(self, mock_session, capsys):
+        with pytest.raises(SystemExit) as e:
+            Logins(mock_session, master_password='', summarize=None, libnss='nonexistent', format='csv')()
+        out, _ = capsys.readouterr()
+        assert e.value.code == 1
+        assert 'Can\'t open libnss' in out
+
+    def test_pw_prompt(self, mock_session, capsys, monkeypatch):
+        import getpass
+        monkeypatch.setattr('getpass.getpass', lambda *args, **kwargs: 'master')
+        Logins(mock_session, master_password=None, summarize=None, libnss='libnss3.so', format='csv')()
+        out, _ = capsys.readouterr()
+        assert 'foo' in out
+
+    def test_wrong_pw(self, mock_session, capsys):
+        with pytest.raises(SystemExit) as e:
+            Logins(mock_session, master_password='wrong', summarize=None, libnss='libnss3.so', format='csv')()
+        out, _ = capsys.readouterr()
+        assert e.value.code == 1
+        assert 'Incorrect master password' in out
+
+class TestPreferencesFeature:
 
     def test_preferences(self, mock_session, capsys):
         Preferences(mock_session, summarize=None, check=None, recommended=None)()
@@ -262,6 +308,8 @@ class TestFeatures:
         assert 'baz = 123' in lines
         assert 'abc = "def"' in lines
         # TODO More feature tests
+
+class TestInfectFeature:
 
     def test_infect(self, mock_session, capsys):
         Infect(mock_session, summarize=None, want_check=True, want_uninstall=None, recommended=None, yes=None)()

@@ -227,6 +227,11 @@ def mock_profile(mock_home):
     make_prefs_js(profile_path)
     return profile_path
 
+@fixture(scope='module')
+def mock_empty_profile(mock_home):
+    profile_path = mock_home / '.mozilla/firefox/random.user2'
+    return profile_path
+
 @fixture
 def mock_session(mock_profile):
     return Session(mock_profile)

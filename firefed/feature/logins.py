@@ -6,10 +6,10 @@ import sys
 import collections
 from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
 from tabulate import tabulate
-from getpass import getpass
+import getpass
 
 from firefed.feature import Feature, output_formats, argument
-from firefed.output import info, error
+from firefed.output import info, error, fatal
 
 
 class SECItem(ctypes.Structure):
@@ -36,24 +36,27 @@ class NSSWrapper:
     """Wrapper for access to Mozilla's Network Security Services library."""
 
     def __init__(self, libnss='libnss3.so', path='.'):
-        self.nss = nss = CDLL(libnss)
+        try:
+            self.nss = nss = CDLL(libnss)
+        except OSError as e:
+            fatal('Can\'t open libnss: %s' % e)
         nss.PR_ErrorToString.restype = ctypes.c_char_p
         nss.PR_ErrorToName.restype = ctypes.c_char_p
         nss.PK11_GetInternalKeySlot.restype = ctypes.c_void_p
         nss.PK11_CheckUserPassword.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
         res = self.nss.NSS_Init(bytes(str(path), 'utf-8'))
         if res != 0:
-            self.handle_error()
+            self.handle_error() # pragma: no cover
         keyslot = self.nss.PK11_GetInternalKeySlot()
         if keyslot is None:
-            self.handle_error()
+            self.handle_error() # pragma: no cover
         self.keyslot = keyslot
 
     def check_password(self, password):
         p_password = ctypes.c_char_p(bytes(password, 'utf-8'))
         res = self.nss.PK11_CheckUserPassword(self.keyslot, p_password)
         if res != 0:
-            self.handle_error()
+            self.handle_error() # pragma: no cover
 
     def decrypt(self, val):
         raw = base64.b64decode(val)
@@ -63,7 +66,7 @@ class NSSWrapper:
         input_.len = len(raw)
         res = self.nss.PK11SDR_Decrypt(byref(input_), byref(output), None)
         if res != 0:
-            self.handle_error()
+            self.handle_error() # pragma: no cover
         data = string_at(output.data, output.len)
         return str(data, 'utf-8')
 
@@ -73,9 +76,6 @@ class NSSWrapper:
         error_str = str(nss.PR_ErrorToString(error), 'utf-8')
         error_name = str(nss.PR_ErrorToName(error), 'utf-8')
         raise NSSError(error_name, error_str)
-
-    def shutdown(self):
-        self.nss.NSS_Shutdown()
 
 
 Login = collections.namedtuple('Login', 'host username password')
@@ -87,28 +87,26 @@ Login = collections.namedtuple('Login', 'host username password')
 class Logins(Feature):
 
     def run(self):
-        logins_json = self.load_json('logins.json')['logins']
-        info('%d logins found.\n' % len(logins_json))
-        if self.summarize:
-            return
-        if self.master_password is None:
-            self.master_password = getpass(prompt='Master password: ')
-            info()
         nss = NSSWrapper(self.libnss, self.session.profile)
+        logins_json = self.load_json('logins.json')['logins']
+        # info('%d logins found.\n' % len(logins_json))
+        # if self.summarize:
+        #     return
+        # TODO Put in summary
+        if self.master_password is None:
+            self.master_password = getpass.getpass(prompt='Master password: ')
+            info()
         try:
             nss.check_password(self.master_password)
         except NSSError as e:
             if e.name == 'SEC_ERROR_BAD_PASSWORD':
-                error('Incorrect master password.')
-                nss.shutdown()
-                return
+                fatal('Incorrect master password (%s)' % e)
         logins = [Login(
             host=login['hostname'],
             username=nss.decrypt(login['encryptedUsername']),
             password=nss.decrypt(login['encryptedPassword']),
         ) for login in logins_json]
         self.build_format(logins)
-        nss.shutdown()
 
     def build_table(self, logins):
         info(tabulate(logins, headers=['Host', 'Username', 'Password']))
