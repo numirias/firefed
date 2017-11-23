@@ -46,11 +46,39 @@ class TestFeature:
 
     def test_run(self, mock_session):
         has_run = False
-        class MockFeature(Feature):
+        class SomeFeature(Feature):
             def run(self):
                 nonlocal has_run
                 has_run = True
-        MockFeature(mock_session)()
+        SomeFeature(mock_session)()
+        assert has_run
+
+    def test_summarize(self, MockFeature, mock_session):
+        has_prepared = has_run = has_summarized = False
+        class SomeFeature(Feature):
+            def run(self):
+                nonlocal has_run
+                has_run = True
+            def summarize(self):
+                nonlocal has_summarized
+                has_summarized = True
+        SomeFeature(mock_session, summarize=True)()
+        assert not has_run
+        assert has_summarized
+
+    def test_prepare(self, MockFeature, mock_session):
+        has_prepared = has_run = False
+        class SomeFeature(Feature):
+            def prepare(self):
+                nonlocal has_prepared
+                has_prepared = True
+                return 'somedata'
+            def run(self, data):
+                nonlocal has_run
+                has_run = True
+                assert data == 'somedata'
+        SomeFeature(mock_session)()
+        assert has_prepared
         assert has_run
 
     def test_profile_path(self, MockFeature):

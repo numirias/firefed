@@ -53,7 +53,7 @@ def moz_datetime(ts):
 
 
 def moz_timestamp(ts):
-    """Convert Mozilla timestamp to UNIX timestamp."""
+    """Convert Mozilla timestamp to Unix timestamp."""
     return ts // 1000000
 
 

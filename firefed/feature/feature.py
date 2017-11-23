@@ -44,16 +44,20 @@ class NotMozLz4Exception(Exception):
 class Feature(ABC):
 
     description = '(no description)'
-    has_summary = False # TODO Remove
     args = []
 
-    def __init__(self, session, **kwargs):
+    def __init__(self, session, summarize=False, **kwargs):
         self.session = session
+        self.want_summary = summarize
         self.__dict__.update(self._defaults)
         self.__dict__.update(kwargs)
 
     def __call__(self):
-        self.run()
+        func = self.summarize if self.want_summary else self.run
+        if hasattr(self, 'prepare'):
+            func(self.prepare())
+        else:
+            func()
 
     @property
     def _defaults(self):
