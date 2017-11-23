@@ -47,9 +47,9 @@ class Preferences(Feature):
 
     def run(self):
         prefs = list(self.parse_prefs())
-        info('%d custom preferences found.\n' % len(prefs))
-        if self.summarize:
-            return
+        # info('%d custom preferences found.\n' % len(prefs))
+        # if self.summarize:
+        #     return
         if not self.check:
             for pref in prefs:
                 info(pref)

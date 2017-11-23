@@ -91,5 +91,6 @@ def make_parser():
     subparsers.required = True
     for name, Feature in feature_map().items():
         feature_parser = subparsers.add_parser(name, help=Feature.description)
-        Feature.add_arguments(feature_parser)
+        for args, kwargs in Feature.args:
+            feature_parser.add_argument(*args, **kwargs)
     return parser

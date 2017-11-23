@@ -1,19 +1,16 @@
-import sqlite3
+from abc import ABC, abstractmethod
+import argparse
 import json
 import lz4
-from abc import ABC, abstractmethod
 from pathlib import Path
+import sqlite3
 
 from firefed.output import info
 
 
 def argument(*args, **kwargs):
     def decorator(cls):
-        original_add_arguments = cls.add_arguments
-        def add_arguments(parser):
-            parser.add_argument(*args, **kwargs)
-            original_add_arguments(parser)
-        cls.add_arguments = add_arguments
+        cls.args = cls.args + [(args, kwargs)]
         return cls
     return decorator
 
@@ -31,7 +28,6 @@ def sqlite_data(db, table, columns):
         def wrapper(obj):
             db_path = obj.profile_path(db)
             if not db_path.exists():
-                print(db)
                 raise FileNotFoundError()
             con = sqlite3.connect(str(db_path))
             cursor = con.cursor()
@@ -42,25 +38,30 @@ def sqlite_data(db, table, columns):
         return wrapper
     return decorator
 
-
 class NotMozLz4Exception(Exception):
     pass
-
 
 class Feature(ABC):
 
     description = '(no description)'
-    has_summary = False
+    has_summary = False # TODO Remove
+    args = []
 
     def __init__(self, session, **kwargs):
         self.session = session
+        self.__dict__.update(self._defaults)
         self.__dict__.update(kwargs)
 
     def __call__(self):
         self.run()
 
-    def add_arguments(parser):
-        pass
+    @property
+    def _defaults(self):
+        """Return dict of argument defaults."""
+        parser = argparse.ArgumentParser()
+        for args, kwargs in self.args:
+            parser.add_argument(*args, **kwargs)
+        return vars(parser.parse_args([]))
 
     @abstractmethod
     def run(self):
