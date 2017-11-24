@@ -86,13 +86,16 @@ Login = collections.namedtuple('Login', 'host username password')
 @output_formats(['table', 'list', 'csv'], default='table')
 class Logins(Feature):
 
-    def run(self):
-        nss = NSSWrapper(self.libnss, self.session.profile)
+    def prepare(self):
+        self.nss = NSSWrapper(self.libnss, self.session.profile)
         logins_json = self.load_json('logins.json')['logins']
-        # info('%d logins found.\n' % len(logins_json))
-        # if self.summarize:
-        #     return
-        # TODO Put in summary
+        return logins_json
+
+    def summarize(self, logins_json):
+        info('%d logins found.' % len(logins_json))
+
+    def run(self, logins_json):
+        nss = self.nss
         if self.master_password is None:
             self.master_password = getpass.getpass(prompt='Master password: ')
             info()

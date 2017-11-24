@@ -30,29 +30,30 @@ Addon = collections.namedtuple('Addon', 'id name version enabled signed visible'
 
 
 @output_formats(['table', 'list', 'csv'], default='table')
-@argument( '-i', '--id', help='select specific addon by id')
+@argument( '-i', '--id', help='select specific addon by id', dest='addon_id')
 @argument( '-V', '--firefox-version', help='Firefox version to check updates against',)
 @argument( '-o', '--outdated',  action='store_true',help='[experimental] check if addons are outdated (queries the addons.mozilla.org API)')
 class Addons(Feature):
 
     update_check_url = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}'
 
-    def run(self):
+    def prepare(self):
         if self.outdated and self.format != 'list':
             fatal('--outdated can only be used with list format (--format list).')
         if self.outdated and self.firefox_version is None:
             fatal('--outdated needs a version (--firefox-version) to check against.')
         addons = list(self.load_addons())
-        # TODO metavar id -> addon_id
-        if self.id:
-            addons = [a for a in addons if a.id == self.id]
-        # TODO: Enable summary
-        # info('%d addons found. (%d enabled)\n' %
-        #      (len(addons), sum(a.enabled for a in addons)))
-        # if self.summarize:
-        #     return
+        if self.addon_id:
+            addons = [a for a in addons if a.id == self.addon_id]
+        return addons
+
+    def run(self, addons):
         addons.sort(key=lambda a: not a.enabled)
         self.build_format(addons)
+
+    def summarize(self, addons):
+        info('%d addons found. (%d enabled)' %
+             (len(addons), sum(a.enabled for a in addons)))
 
     def load_addons(self):
         # We prefer "extensions.json" over "addons.json"

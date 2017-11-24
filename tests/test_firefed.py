@@ -284,8 +284,13 @@ class TestAddonsFeature:
         assert 'fooextension' in out
         assert 'barextension' in out
 
+    def test_summary(self, mock_session, capsys):
+        Addons(mock_session, summary=True)()
+        out, _ = capsys.readouterr()
+        assert out == '2 addons found. (1 enabled)\n'
+
     def test_addons_by_id(self, mock_session, capsys):
-        Addons(mock_session, format='csv', id='foo@bar')()
+        Addons(mock_session, format='csv', addon_id='foo@bar')()
         out, _ = capsys.readouterr()
         assert 'fooextension' in out
         assert 'barextension' not in out
@@ -350,6 +355,11 @@ class TestPreferencesFeature:
         assert 'abc = "def"' in lines
         # TODO More feature tests
 
+    def test_summary(self, mock_session, capsys):
+        Preferences(mock_session, summary=True)()
+        out, _ = capsys.readouterr()
+        assert out == '3 custom preferences found.\n'
+
 class TestInfectFeature:
 
     def test_check(self, mock_session, capsys):
@@ -364,4 +374,3 @@ class TestSummaryFeature:
         Summary(mock_session)()
         out, _ = capsys.readouterr()
         assert 'custom preferences found' in out
-        assert out.count('\n') == 1
