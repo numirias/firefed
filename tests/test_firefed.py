@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from firefed import Session
-from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies, Addons, Logins, Preferences, Infect
+from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies, Addons, Logins, Preferences, Infect, Summary
 from firefed.feature.feature import NotMozLz4Exception
 from firefed.feature.cookies import Cookie, session_file
 from firefed.util import profile_dir
@@ -41,8 +41,8 @@ class TestFeature:
         assert SomeFeature(mock_session).format == 'b'
 
     def test_init(self, MockFeature, mock_session):
-        feature = MockFeature(mock_session, arg1=2)
-        assert feature.arg1 == 2
+        feature = MockFeature(mock_session)
+        assert feature._defaults == {}
 
     def test_run(self, mock_session):
         has_run = False
@@ -50,10 +50,12 @@ class TestFeature:
             def run(self):
                 nonlocal has_run
                 has_run = True
-        SomeFeature(mock_session)()
+        feature = SomeFeature(mock_session)
+        feature()
         assert has_run
+        assert 'summary' not in feature._defaults
 
-    def test_summarize(self, MockFeature, mock_session):
+    def test_summarize(self, mock_session):
         has_prepared = has_run = has_summarized = False
         class SomeFeature(Feature):
             def run(self):
@@ -62,11 +64,15 @@ class TestFeature:
             def summarize(self):
                 nonlocal has_summarized
                 has_summarized = True
-        SomeFeature(mock_session, summarize=True)()
+        SomeFeature(mock_session, summary=True)()
         assert not has_run
         assert has_summarized
 
-    def test_prepare(self, MockFeature, mock_session):
+        feature = SomeFeature(mock_session)
+        feature()
+        assert 'summary' in feature._defaults
+
+    def test_prepare(self, mock_session):
         has_prepared = has_run = False
         class SomeFeature(Feature):
             def prepare(self):
@@ -80,6 +86,10 @@ class TestFeature:
         SomeFeature(mock_session)()
         assert has_prepared
         assert has_run
+
+    def test_wrong_argument(self, mock_session, MockFeature):
+        with pytest.raises(TypeError):
+            MockFeature(mock_session, unknown_argument=1)()
 
     def test_profile_path(self, MockFeature):
         session = Session(profile='/foo/bar')
@@ -103,6 +113,7 @@ class TestFeature:
 
     def test_build_format(self, MockFeature, mock_session):
         res = None
+        @output_formats(['foo'])
         class MockFeatureFoo(MockFeature):
             def build_foo(self, arg):
                 nonlocal res
@@ -346,3 +357,11 @@ class TestInfectFeature:
         out, _ = capsys.readouterr()
         assert 'doesn\'t seem fully installed' in out
         # TODO More feature tests
+
+class TestSummaryFeature:
+
+    def test_summary(self, mock_session, capsys):
+        Summary(mock_session)()
+        out, _ = capsys.readouterr()
+        assert 'custom preferences found' in out
+        assert out.count('\n') == 1

@@ -76,12 +76,6 @@ def make_parser():
         type=profile_dir_type,
         default='',
     )
-    parser.add_argument(
-        '-s',
-        '--summarize',
-        action='store_true',
-        help='summarize results',
-    )
     subparsers = parser.add_subparsers(
         title='features',
         metavar='FEATURE',

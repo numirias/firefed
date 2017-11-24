@@ -33,8 +33,6 @@ class TestUtils:
         assert e.value.code == 0
         out, _ = capsys.readouterr()
         assert out.startswith('usage:')
-        args = parser.parse_args(['--profile', str(mock_profile), 'summary'])
-        assert args.summarize is False
 
     def test_feature_map(self):
         fmap = feature_map()

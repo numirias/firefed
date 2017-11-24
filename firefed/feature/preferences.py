@@ -41,15 +41,17 @@ class Preference:
                 return val[1:-1]
 
 
-@argument( '-r', '--recommended', default='userjs-relaxed', help='path to user.js file with recommended settings (use "userjs-master" or "userjs-relaxed" to load userjs config from Github)',)
+@argument( '-r', '--recommended', default='userjs-relaxed', help='path to user.js file with recommended settings (use "userjs-master" or "userjs-relaxed" to load userjs config from Github)')
 @argument( '-c', '--check', action='store_true', help='check preferences for dubious settings')
 class Preferences(Feature):
 
-    def run(self):
-        prefs = list(self.parse_prefs())
-        # info('%d custom preferences found.\n' % len(prefs))
-        # if self.summarize:
-        #     return
+    def prepare(self):
+        return list(self.parse_prefs())
+
+    def summarize(self, prefs):
+        info('%d custom preferences found.' % len(prefs))
+
+    def run(self, prefs):
         if not self.check:
             for pref in prefs:
                 info(pref)

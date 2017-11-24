@@ -46,18 +46,32 @@ class Feature(ABC):
     description = '(no description)'
     args = []
 
-    def __init__(self, session, summarize=False, **kwargs):
+    def __init__(self, session, **kwargs):
         self.session = session
-        self.want_summary = summarize
-        self.__dict__.update(self._defaults)
-        self.__dict__.update(kwargs)
+        for k, v in self._defaults.items():
+            setattr(self, k, kwargs.pop(k, v))
+        if kwargs:
+            raise TypeError('%s got unexpected keyword arguments: %s' %
+                            (self.__class__.__name__, kwargs))
 
     def __call__(self):
-        func = self.summarize if self.want_summary else self.run
+        if hasattr(self, 'summarize') and self.summary:
+            func = self.summarize
+        else:
+            func = self.run
         if hasattr(self, 'prepare'):
             func(self.prepare())
         else:
             func()
+
+    def __init_subclass__(cls):
+        if hasattr(cls, 'summarize'):
+            argument(
+                '-s',
+                '--summary',
+                action='store_true',
+                help='summarize results',
+            )(cls)
 
     @property
     def _defaults(self):
