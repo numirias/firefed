@@ -5,7 +5,8 @@ import os
 
 
 from firefed.feature import Feature, Summary
-from firefed.util import profile_dir, profile_dir_type, ProfileNotFoundError, feature_map, moz_datetime, moz_timestamp, make_parser
+from firefed.util import profile_dir, profile_dir_type, ProfileNotFoundError, \
+    feature_map, moz_datetime, moz_timestamp, make_parser
 
 
 class TestUtils:
@@ -29,7 +30,7 @@ class TestUtils:
     def test_argparse(self, capsys, mock_profile):
         parser = make_parser()
         with pytest.raises(SystemExit) as e:
-            args = parser.parse_args(['-h'])
+            parser.parse_args(['-h'])
         assert e.value.code == 0
         out, _ = capsys.readouterr()
         assert out.startswith('usage:')

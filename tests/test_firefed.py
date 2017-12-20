@@ -1,4 +1,3 @@
-import argparse
 from collections import namedtuple
 import csv
 from datetime import datetime
@@ -7,10 +6,11 @@ from pathlib import Path
 import pytest
 
 from firefed import Session
-from firefed.feature import Feature, output_formats, sqlite_data, argument, Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, Visits, Cookies, Addons, Logins, Preferences, Infect, Summary
+from firefed.feature import Feature, output_formats, sqlite_data, argument, \
+    Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, \
+    Visits, Cookies, Addons, Logins, Preferences, Infect, Summary
 from firefed.feature.feature import NotMozLz4Exception
 from firefed.feature.cookies import Cookie, session_file
-from firefed.util import profile_dir
 
 
 def parse_csv(str_):
@@ -56,7 +56,7 @@ class TestFeature:
         assert 'summary' not in feature._defaults
 
     def test_summarize(self, mock_session):
-        has_prepared = has_run = has_summarized = False
+        has_run = has_summarized = False
         class SomeFeature(Feature):
             def run(self):
                 nonlocal has_run
@@ -108,7 +108,8 @@ class TestFeature:
             mock_feature.load_mozlz4('test_json.json')
 
     def test_exec_sqlite(self, mock_feature):
-        res = mock_feature.exec_sqlite('test_sqlite.sqlite', 'SELECT c2 from t1')
+        res = mock_feature.exec_sqlite('test_sqlite.sqlite',
+                                       'SELECT c2 from t1')
         assert ('r2v2',) in res
 
     def test_build_format(self, MockFeature, mock_session):
@@ -124,7 +125,8 @@ class TestFeature:
     def test_sqlite_data(self, mock_session):
         data = None
         class SomeFeature(Feature):
-            @sqlite_data(db='test_sqlite.sqlite', table='t1', columns=['c1', 'c2'])
+            @sqlite_data(db='test_sqlite.sqlite', table='t1',
+                         columns=['c1', 'c2'])
             def run(self, data_):
                 nonlocal data
                 data = data_
@@ -132,7 +134,8 @@ class TestFeature:
         assert ('r1v1', 'r1v2') in data
 
         class SomeFeature2(Feature):
-            @sqlite_data(db='nonexistent.sqlite', table='t1', columns=['c1', 'c2'])
+            @sqlite_data(db='nonexistent.sqlite', table='t1',
+                         columns=['c1', 'c2'])
             def run(self, data):
                 pass
         with pytest.raises(FileNotFoundError):
@@ -170,7 +173,8 @@ class TestPermissionsFeature:
     def test_formats(self, mock_session, capsys):
         Permissions(mock_session, format='table')()
         out, _ = capsys.readouterr()
-        assert ['https://two.example/', 'permission2'] in (line.split() for line in out.split('\n'))
+        assert ['https://two.example/',
+                'permission2'] in (line.split() for line in out.split('\n'))
         Permissions(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
@@ -205,7 +209,8 @@ class TestVisitsFeature:
         Visits(mock_session, format='list')()
         out, _ = capsys.readouterr()
         lines = out.split('\n')
-        assert '%s %s' % (datetime.fromtimestamp(1), 'http://one.example/') in lines
+        assert '%s %s' % (datetime.fromtimestamp(1), 'http://one.example/') \
+            in lines
 
         Visits(mock_session, format='csv')()
         out, _ = capsys.readouterr()
@@ -219,8 +224,10 @@ class TestCookiesFeature:
         cookie = Cookie(name='foo', value='bar')
         assert str(cookie) == 'foo=bar'
 
-        cookie = Cookie(name='foo', value='bar', host='one.example', path='/baz', secure=True, http_only=True)
-        assert all(x in str(cookie).lower() for x in ['foo=bar', 'path=/baz', 'secure', 'httponly', 'domain=one.example'])
+        cookie = Cookie(name='foo', value='bar', host='one.example',
+                        path='/baz', secure=True, http_only=True)
+        assert all(x in str(cookie).lower() for x in ['foo=bar', 'path=/baz',
+                   'secure', 'httponly', 'domain=one.example'])
 
     def test_cookies(self, mock_session, capsys):
         Cookies(mock_session, format='list')()
@@ -229,14 +236,16 @@ class TestCookiesFeature:
 
         feature = Cookies(mock_session)
         cookies = feature.load_ss_cookies('sessionstore.jsonlz4')
-        assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example') for c in cookies)
+        assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example')
+                   for c in cookies)
 
         Cookies(mock_session, host='tw*.example', format='list')()
         out, _ = capsys.readouterr()
         assert out.startswith('k2=v2')
 
-        assert session_file('sessionstore') == session_file('sessionstore.jsonlz4')
-        assert session_file('sessionstore') != session_file('nonexistent')
+        file = session_file('sessionstore')
+        assert file == session_file('sessionstore.jsonlz4')
+        assert file != session_file('nonexistent')
 
         Cookies(mock_session, session_file='nonexistent', format='list')()
         out, _ = capsys.readouterr()
@@ -270,9 +279,12 @@ class TestAddonsFeature:
         Addons(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
-        assert data[0] == ['id', 'name', 'version', 'enabled', 'signed', 'visible']
-        assert ['foo@bar', 'fooextension', '1.2.3', 'True', 'preliminary', 'True'] in data
-        assert ['bar@baz', 'barextension', '0.1rc', 'False', '', 'False'] in data
+        assert data[0] == ['id', 'name', 'version', 'enabled', 'signed',
+                           'visible']
+        assert ['foo@bar', 'fooextension', '1.2.3', 'True', 'preliminary',
+                'True'] in data
+        assert ['bar@baz', 'barextension', '0.1rc', 'False', '', 'False'] \
+            in data
 
         Addons(mock_session, format='list')()
         out, _ = capsys.readouterr()
@@ -331,8 +343,10 @@ class TestLoginsFeature:
         assert 'Can\'t open libnss' in out
 
     def test_pw_prompt(self, mock_session, capsys, monkeypatch):
-        import getpass
-        monkeypatch.setattr('getpass.getpass', lambda *args, **kwargs: 'master')
+        import getpass # noqa
+        def mock_getpass(*args, **kwargs):
+            return 'master'
+        monkeypatch.setattr('getpass.getpass', mock_getpass)
         Logins(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         assert 'foo' in out
@@ -374,3 +388,4 @@ class TestSummaryFeature:
         Summary(mock_session)()
         out, _ = capsys.readouterr()
         assert 'custom preferences found' in out
+        # TODO make proper summary tests

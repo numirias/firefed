@@ -6,7 +6,7 @@ from firefed.output import info
 from firefed.util import moz_datetime, moz_timestamp
 
 
-class HistoryEntry: # TODO: Refactor as namedtuple?
+class HistoryEntry:  # TODO: Refactor as namedtuple?
 
     _fields = ['url', 'title', 'last_visit_date', 'visit_count']
 
@@ -25,7 +25,8 @@ class History(Feature):
         entries.sort(key=lambda x: x.last_visit_date)
         self.build_format(entries)
 
-    def build_list(self, entries):
+    @staticmethod
+    def build_list(entries):
         for entry in entries:
             last_visit = moz_datetime(entry.last_visit_date)
             info(entry.url)
@@ -34,11 +35,13 @@ class History(Feature):
             info('    Visits:     %s' % entry.visit_count)
             info()
 
-    def build_short(self, entries):
+    @staticmethod
+    def build_short(entries):
         for entry in entries:
             info(entry.url)
 
-    def build_csv(self, entries):
+    @staticmethod
+    def build_csv(entries):
         writer = csv.writer(sys.stdout)
         writer.writerow(HistoryEntry._fields)
         for entry in entries:

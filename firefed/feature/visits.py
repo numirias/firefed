@@ -1,7 +1,5 @@
-from datetime import datetime
 import csv
 import sys
-import sqlite3
 from collections import namedtuple
 
 from firefed.feature import Feature, output_formats
@@ -26,11 +24,13 @@ class Visits(Feature):
         visits.sort(key=lambda x: x.visit_date)
         self.build_format(visits)
 
-    def build_list(self, visits):
+    @staticmethod
+    def build_list(visits):
         for visit in visits:
             info(moz_datetime(visit.visit_date), visit.url)
 
-    def build_csv(self, visits):
+    @staticmethod
+    def build_csv(visits):
         writer = csv.writer(sys.stdout)
         writer.writerow(Visit._fields)
         for visit in visits:

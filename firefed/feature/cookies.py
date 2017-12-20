@@ -1,18 +1,16 @@
 import csv
 from fnmatch import fnmatch
 import json
-import lz4
-import os
 from pathlib import Path
 import sys
 
 from firefed.feature import Feature, output_formats, argument
-from firefed.output import info, error
+from firefed.output import error
 
 
 class Cookie:
 
-    _column_map = {
+    column_map = {
         'name': 'name',
         'value': 'value',
         'host': 'host',
@@ -20,7 +18,7 @@ class Cookie:
         'isSecure': 'secure',
         'isHttpOnly': 'http_only',
     }
-    _fields = tuple(_column_map.values())
+    _fields = tuple(column_map.values())
 
     def __init__(self, **kwargs):
         for field in self._fields:
@@ -87,11 +85,13 @@ class Cookies(Feature):
             http_only=cookie['httponly'] if 'httponly' in cookie else False,
         ) for cookie in cookies]
 
-    def build_list(self, cookies):
+    @staticmethod
+    def build_list(cookies):
         for cookie in cookies:
             print(cookie)
 
-    def build_csv(self, cookies):
+    @staticmethod
+    def build_csv(cookies):
         writer = csv.writer(sys.stdout)
         writer.writerow(Cookie._fields)
         for cookie in cookies:

@@ -33,5 +33,3 @@ class TestMain:
     #     argv = ['firefed', '--profile', str(mock_profile), 'summary']
     #     with mock.patch.object(sys, 'argv', argv):
     #         firefed.__main__.main()
-
-

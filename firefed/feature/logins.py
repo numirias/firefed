@@ -1,15 +1,14 @@
 import base64
-import json
-import ctypes
 import csv
 import sys
 import collections
+import getpass
+import ctypes
 from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
 from tabulate import tabulate
-import getpass
 
 from firefed.feature import Feature, output_formats, argument
-from firefed.output import info, error, fatal
+from firefed.output import info, fatal
 
 
 class SECItem(ctypes.Structure):
@@ -40,10 +39,10 @@ class NSSWrapper:
             self.nss = nss = CDLL(libnss)
         except OSError as e:
             fatal('Can\'t open libnss: %s' % e)
-        nss.PR_ErrorToString.restype = ctypes.c_char_p
-        nss.PR_ErrorToName.restype = ctypes.c_char_p
-        nss.PK11_GetInternalKeySlot.restype = ctypes.c_void_p
-        nss.PK11_CheckUserPassword.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+        nss.PR_ErrorToString.restype = c_char_p
+        nss.PR_ErrorToName.restype = c_char_p
+        nss.PK11_GetInternalKeySlot.restype = c_void_p
+        nss.PK11_CheckUserPassword.argtypes = [c_void_p, c_char_p]
         res = self.nss.NSS_Init(bytes(str(path), 'utf-8'))
         if res != 0:
             self.handle_error() # pragma: no cover
@@ -91,7 +90,8 @@ class Logins(Feature):
         logins_json = self.load_json('logins.json')['logins']
         return logins_json
 
-    def summarize(self, logins_json):
+    @staticmethod
+    def summarize(logins_json):
         info('%d logins found.' % len(logins_json))
 
     def run(self, logins_json):
@@ -111,18 +111,20 @@ class Logins(Feature):
         ) for login in logins_json]
         self.build_format(logins)
 
-    def build_table(self, logins):
+    @staticmethod
+    def build_table(logins):
         info(tabulate(logins, headers=['Host', 'Username', 'Password']))
 
-
-    def build_list(self, logins):
+    @staticmethod
+    def build_list(logins):
         for host, username, password in logins:
             info(host)
             info('    Username: %s' % username)
             info('    Password: %s' % password)
             info()
 
-    def build_csv(self, logins):
+    @staticmethod
+    def build_csv(logins):
         writer = csv.DictWriter(sys.stdout, fieldnames=Login._fields)
         writer.writeheader()
         writer.writerows([l._asdict() for l in logins])
