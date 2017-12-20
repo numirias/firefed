@@ -7,10 +7,11 @@ DOWNLOAD_TYPE = 10
 
 class Downloads(Feature):
 
-    @sqlite_data(db='places.sqlite', table='moz_annos', columns=['anno_attribute_id', 'content'])
+    @sqlite_data(db='places.sqlite', table='moz_annos',
+                 columns=['anno_attribute_id', 'content'])
     def run(self, data):
-        for id, content in data:
-            if id != DOWNLOAD_TYPE:
+        for id_, content in data:
+            if id_ != DOWNLOAD_TYPE:
                 continue
             info('%s' % content)
 
@@ -25,7 +26,8 @@ class Hosts(Feature):
 
 class InputHistory(Feature):
 
-    @sqlite_data(db='places.sqlite', table='moz_inputhistory', columns=['input'])
+    @sqlite_data(db='places.sqlite', table='moz_inputhistory',
+                 columns=['input'])
     def run(self, data):
-        for input in data:
-            info('%s' % input)
+        for input_ in data:
+            info('%s' % input_)

@@ -10,9 +10,9 @@ from firefed.output import error, info, good, bad, fatal
 
 
 startup_key = 'app-system-defaults'
-addon_id = '@testpilot-addon' # ID is in whitelist for legacy extensions
+addon_id = '@testpilot-addon'  # ID is in whitelist for legacy extensions
 addon_version = '1.0'
-addon_filename = 'infect@example.com.xpi'
+addon_path = 'infect@example.com.xpi'
 addon_entry = {
     'id': addon_id,
     'syncGUID': 'infect',
@@ -38,7 +38,7 @@ addon_entry = {
     'updateDate': 1506403392000,
     'applyBackgroundUpdates': 1,
     'bootstrap': True,
-    'path': None, # Needs to be set
+    'path': None,  # Needs to be set
     'skinnable': False,
     'size': 962,
     'sourceURI': None,
@@ -72,7 +72,7 @@ addon_entry = {
 startup_entry = {
     'enabled': True,
     'lastModifiedTime': 1506403392000,
-    'path': addon_filename,
+    'path': addon_path,
     'version': addon_version,
     'bootstrapped': True,
     'dependencies': [],
@@ -81,28 +81,31 @@ startup_entry = {
 }
 
 ADDON_STARTUP_FILE = 'addonStartup.json.lz4'
-EXTENSIONS_DIR = 'extensions'
-EXTENSIONS_DB = 'extensions.json'
+EXT_DIR = 'extensions'
+EXT_DB = 'extensions.json'
 
 ROOT_PATH = os.path.dirname(os.path.realpath(sys.modules['firefed'].__file__))
 
 
 def make_addon_entry(path):
     entry = addon_entry.copy()
-    entry['path'] = os.path.join(path, EXTENSIONS_DIR, addon_filename)
+    entry['path'] = os.path.join(path, EXT_DIR, addon_path)
     return entry
 
 
-@argument( '-u', '--uninstall', help='uninstall malicious addon', action='store_true', default=False, dest='want_uninstall')
-@argument( '-c', '--check', help='check if profile appears infected', action='store_true', default=False, dest='want_check')
-@argument( '-y', '--yes', help='don\'t prompt for confirmation', action='store_true', default=False)
+@argument('-u', '--uninstall', help='uninstall malicious addon',
+          action='store_true', default=False, dest='want_uninstall')
+@argument('-c', '--check', help='check if profile appears infected',
+          action='store_true', default=False, dest='want_check')
+@argument('-y', '--yes', help='don\'t prompt for confirmation',
+          action='store_true', default=False)
 class Infect(Feature):
 
     def run(self):
         self.read_extensions_json()
         self.read_addon_startup_json()
         addons = self.extensions_json['addons']
-        addon = next((addon for addon in addons if addon['id'] == addon_id), None)
+        addon = next((a for a in addons if a['id'] == addon_id), None)
         if self.want_uninstall:
             self.uninstall(addon)
         elif self.want_check:
@@ -114,7 +117,8 @@ class Infect(Feature):
         checks = (
             addon is not None,
             addon_id in self.addon_startup_json[startup_key]['addons'],
-            Path(self.profile_path(os.path.join(EXTENSIONS_DIR, addon_filename))).is_file(),
+            Path(self.profile_path(os.path.join(EXT_DIR,
+                                                addon_path))).is_file(),
         )
         if all(checks):
             info(good('Extension seems installed.'))
@@ -127,22 +131,24 @@ class Infect(Feature):
         try:
             addons.remove(addon)
         except ValueError:
-            fatal('Can\'t remove addon entry from "extensions.json". No entry found.')
+            fatal('Can\'t remove addon from "%s". No entry found.' % EXT_DB)
         self.write_extensions_json()
         try:
             del self.addon_startup_json[startup_key]['addons'][addon_id]
-        except KeyError as e:
-            fatal('Can\'t remove addon entry from "%s". No entry found.' % ADDON_STARTUP_FILE)
+        except KeyError:
+            fatal('Can\'t remove addon entry from "%s". No entry found.' %
+                  ADDON_STARTUP_FILE)
         self.write_addon_startup_json()
-        target = self.profile_path(os.path.join(EXTENSIONS_DIR, addon_filename))
+        target = self.profile_path(os.path.join(EXT_DIR, addon_path))
         try:
             os.remove(target)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             fatal('Can\'t remove XPI. File not found.')
 
     def install(self, addon):
         if not self.yes:
-            info('Are you sure you want to infect profile "%s"? (y/N)' % self.session.profile)
+            info('Are you sure you want to infect profile "%s"? (y/N)' %
+                 self.session.profile)
             if input().lower() not in ['y', 'yes']:
                 fatal('Cancelled.')
         info('Installing...')
@@ -164,11 +170,11 @@ class Infect(Feature):
             startup[startup_key]['addons'][addon_id] = startup_entry
             self.write_addon_startup_json()
         try:
-            os.mkdir(self.profile_path(EXTENSIONS_DIR))
+            os.mkdir(self.profile_path(EXT_DIR))
         except FileExistsError:
             pass
         source = os.path.join(ROOT_PATH, 'data/infect/')
-        target = self.profile_path(os.path.join(EXTENSIONS_DIR, addon_filename))
+        target = self.profile_path(os.path.join(EXT_DIR, addon_path))
         if os.path.isfile(target):
             error('XPI file already exists.')
         else:
@@ -180,12 +186,12 @@ class Infect(Feature):
                     f.write(path, filename)
 
     def read_extensions_json(self):
-        with open(self.profile_path(EXTENSIONS_DB)) as f:
+        with open(self.profile_path(EXT_DB)) as f:
             self.extensions_json = json.load(f)
 
     def write_extensions_json(self):
         info('Updating "extensions.json".')
-        with open(self.profile_path(EXTENSIONS_DB), 'w') as f:
+        with open(self.profile_path(EXT_DB), 'w') as f:
             json.dump(self.extensions_json, f)
 
     def read_addon_startup_json(self):
@@ -196,7 +202,8 @@ class Infect(Feature):
         self.addon_startup_json = json.loads(data)
 
     def write_addon_startup_json(self):
-        compressed = lz4.block.compress(bytes(json.dumps(self.addon_startup_json), 'utf-8'))
+        compressed = lz4.block.compress(
+            bytes(json.dumps(self.addon_startup_json), 'utf-8'))
         info('Updating "addonsStartup.json.lz4".')
         with open(self.profile_path(ADDON_STARTUP_FILE), 'wb') as f:
             f.write(b'mozLz40\0' + compressed)

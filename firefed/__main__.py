@@ -1,6 +1,4 @@
-import argparse
-
-from firefed.session import Session
+from firefed import Session
 from firefed.util import make_parser
 
 

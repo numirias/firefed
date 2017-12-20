@@ -2,8 +2,8 @@ language: python
 python:
     - "3.6"
 install:
-    - pip install pipenv --upgrade
-    - pipenv install --dev --skip-lock
+    - make
 script:
-    - pipenv run pytest --cov firefed tests/
-    - pipenv run codecov
+    - make test
+    - make lint
+    - make codecov

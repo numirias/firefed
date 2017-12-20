@@ -2,7 +2,6 @@ import argparse
 from collections import OrderedDict
 from configparser import ConfigParser
 from datetime import datetime
-import os
 from pathlib import Path
 
 import firefed.__version__ as version
@@ -28,7 +27,8 @@ def profile_dir(name):
         if name:
             profile = next(p for p in profiles if p['name'] == name)
         else:
-            profile = next(p for p in profiles if 'Default' in p and int(p['Default']))
+            profile = next(p for p in profiles if 'Default' in p and
+                           int(p['Default']))
     except StopIteration:
         raise ProfileNotFoundError(name or '(default)')
     profile_path = Path(profile['Path'])

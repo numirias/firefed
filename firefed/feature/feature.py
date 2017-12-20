@@ -1,11 +1,9 @@
 from abc import ABC, abstractmethod
 import argparse
 import json
-import lz4
-from pathlib import Path
 import sqlite3
-
-from firefed.output import info
+from pathlib import Path
+import lz4
 
 
 def argument(*args, **kwargs):
@@ -82,7 +80,7 @@ class Feature(ABC):
         return vars(parser.parse_args([]))
 
     @abstractmethod
-    def run(self):
+    def run(self, prepared_data):
         pass
 
     def profile_path(self, path):
@@ -98,7 +96,7 @@ class Feature(ABC):
             dict_ = {}
             for idx, col in enumerate(cursor.description):
                 try:
-                    new_name = cls._column_map[col[0]]
+                    new_name = cls.column_map[col[0]]
                 except AttributeError:
                     new_name = col[0]
                 dict_[new_name] = row[idx]
@@ -107,7 +105,7 @@ class Feature(ABC):
         con.row_factory = obj_factory
         cursor = con.cursor()
         try:
-            sql_fields = cls._column_map.keys()
+            sql_fields = cls.column_map.keys()
         except AttributeError:
             sql_fields = cls._fields
         result = cursor.execute('SELECT %s FROM %s' %

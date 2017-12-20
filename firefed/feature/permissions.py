@@ -9,7 +9,8 @@ from firefed.output import info
 @output_formats(['table', 'csv'], default='table')
 class Permissions(Feature):
 
-    @sqlite_data(db='permissions.sqlite', table='moz_perms', columns=['origin', 'type'])
+    @sqlite_data(db='permissions.sqlite', table='moz_perms',
+                 columns=['origin', 'type'])
     def run(self, data):
         if self.format == 'table':
             info(tabulate(data, headers=('Host', 'Permission')))

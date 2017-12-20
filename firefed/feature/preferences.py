@@ -1,7 +1,5 @@
 import re
 import requests
-from collections import defaultdict
-from tabulate import tabulate
 
 from firefed.feature import Feature, argument
 from firefed.output import info, good, bad
@@ -23,9 +21,9 @@ class Preference:
 
     @staticmethod
     def type_to_repr(val):
-        if type(val) == str:
+        if isinstance(val, str):
             return '"%s"' % val
-        elif type(val) == bool:
+        elif isinstance(val, bool):
             return repr(val).lower()
         return str(val)
 
@@ -41,14 +39,18 @@ class Preference:
                 return val[1:-1]
 
 
-@argument( '-r', '--recommended', default='userjs-relaxed', help='path to user.js file with recommended settings (use "userjs-master" or "userjs-relaxed" to load userjs config from Github)')
-@argument( '-c', '--check', action='store_true', help='check preferences for dubious settings')
+@argument('-r', '--recommended', default='userjs-relaxed', help='path to \
+user.js file with recommended settings (use "userjs-master" or \
+"userjs-relaxed" to load userjs config from Github)')
+@argument('-c', '--check', action='store_true', help='check preferences for \
+dubious settings')
 class Preferences(Feature):
 
     def prepare(self):
         return list(self.parse_prefs())
 
-    def summarize(self, prefs):
+    @staticmethod
+    def summarize(prefs):
         info('%d custom preferences found.' % len(prefs))
 
     def run(self, prefs):
@@ -76,7 +78,8 @@ class Preferences(Feature):
         for match in matches:
             yield Preference(match[1], Preference.repr_to_type(match[2]))
 
-    def parse_userjs(self, filename):
+    @staticmethod
+    def parse_userjs(filename):
         if filename in ['userjs-master', 'userjs-relaxed']:
             branch = 'relaxed' if filename == 'userjs-relaxed' else 'master'
             data = requests.get(userjs_url % branch).text
