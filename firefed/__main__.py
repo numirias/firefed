@@ -5,7 +5,7 @@ from firefed.util import make_parser
 def main():
     parser = make_parser()
     args = vars(parser.parse_args())
-    session = Session(args.pop('profile'))
+    session = Session(args.pop('profile'), args.pop('verbosity'))
     session(args.pop('feature'), args)
 
 

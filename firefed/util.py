@@ -76,6 +76,13 @@ def make_parser():
         type=profile_dir_type,
         default='',
     )
+    parser.add_argument(
+        '-v',
+        '--verbosity',
+        help='verbosity level (1-?)',  # TODO
+        action='count',
+        default=0,
+    )
     subparsers = parser.add_subparsers(
         title='features',
         metavar='FEATURE',
