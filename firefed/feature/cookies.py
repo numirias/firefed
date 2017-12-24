@@ -28,7 +28,7 @@ class Cookie:
                 setattr(self, field, None)
 
     def __str__(self):
-        # Re-assemble cookies based rougly on the 'Set-Cookie' format
+        # Re-assemble cookies based roughly on the 'Set-Cookie' format
         text = '%s=%s' % (self.name, self.value)
         if self.host:
             text += '; Domain=%s' % self.host

@@ -78,9 +78,10 @@ def make_parser():
     )
     parser.add_argument(
         '-v',
-        '--verbosity',
-        help='verbosity level (1-?)',  # TODO
+        '--verbose',
+        help='verbose output (up to 3 times)',  # TODO
         action='count',
+        dest='verbosity',
         default=0,
     )
     subparsers = parser.add_subparsers(

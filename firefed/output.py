@@ -1,10 +1,12 @@
-from colorama import init, Fore, Style
+import logging
+
+import colorama
+from colorama import Fore, Style
 
 
-init()
+colorama.init()
 
 # TODO: dependency on colorama really necessary?
-
 def error(text):
     print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL)
 
@@ -23,3 +25,16 @@ def bad(text):
 
 def okay(text):
     return Fore.YELLOW + text + Style.RESET_ALL
+
+# TODO Refactor logging
+logger = logging.getLogger('firefed')
+
+def init_logger():
+    logger.setLevel(logging.ERROR)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+init_logger()
+log = logger.info

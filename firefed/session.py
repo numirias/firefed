@@ -1,5 +1,6 @@
+import logging
+from firefed.output import log, logger
 from firefed.util import feature_map
-from firefed.output import info
 
 
 class Session:
@@ -7,13 +8,13 @@ class Session:
     def __init__(self, profile, verbosity=0):
         self.profile = profile
         self.verbosity = verbosity
+        if verbosity > 0:
+            logger.setLevel(logging.INFO)
 
     def __call__(self, feature, args=None):
         if args is None:
             args = {}
         ChosenFeature = feature_map()[feature]
-        # TODO Refactor as verbosity level
-        if 'format' not in args or args['format'] != 'csv':
-            info('Profile:', self.profile)
-            info('Feature: %s\n' % ChosenFeature.__name__)
+        log('Profile: %s', self.profile)
+        log('Feature: %s\n', ChosenFeature.__name__)
         ChosenFeature(self, **args)()
