@@ -9,6 +9,7 @@ pref_regex = r'\s*user_pref\((["\'])(.+?)\1,\s*(.+?)\);'
 userjs_url = 'https://raw.githubusercontent.com/pyllyukko/user.js/%s/user.js'
 
 
+# TODO Use attr
 class Preference:
 
     def __init__(self, key, value, info=None):
@@ -23,7 +24,7 @@ class Preference:
     def type_to_repr(val):
         if isinstance(val, str):
             return '"%s"' % val
-        elif isinstance(val, bool):
+        if isinstance(val, bool):
             return repr(val).lower()
         return str(val)
 
@@ -31,12 +32,11 @@ class Preference:
     def repr_to_type(val):
         if val in ['true', 'false']:
             return val == 'true'
-        else:
-            try:
-                return int(val)
-            except ValueError:
-                # Value be a string, so we just need to cut the quotes
-                return val[1:-1]
+        try:
+            return int(val)
+        except ValueError:
+            # Value will be a string, so just cut the surrounding quotes
+            return val[1:-1]
 
 
 @argument('-r', '--recommended', default='userjs-relaxed', help='path to \

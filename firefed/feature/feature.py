@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 import argparse
+import csv
 import json
 import sqlite3
+import sys
 from pathlib import Path
 import lz4.block
+import attr
 
 
 def argument(*args, **kwargs):
@@ -129,3 +132,12 @@ class Feature(ABC):
 
     def build_format(self, *args, **kwargs):
         getattr(self, 'build_%s' % self.format)(*args, **kwargs)
+
+    @staticmethod
+    def csv_from_items(item_type, items, stream=None):
+        if stream is None:
+            stream = sys.stdout
+        fields = [a.name for a in attr.fields(item_type)]
+        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows([attr.asdict(x) for x in items])

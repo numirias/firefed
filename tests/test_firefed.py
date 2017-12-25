@@ -289,7 +289,7 @@ class TestAddonsFeature:
         Addons(mock_session, format='list')()
         out, _ = capsys.readouterr()
         assert out.startswith('fooextension')
-        assert all(x in out for x in ['preliminary', '[enabled]'])
+        assert all(x in out for x in ['preliminary', 'enabled'])
 
         Addons(mock_session, format='table')()
         out, _ = capsys.readouterr()
@@ -310,12 +310,12 @@ class TestAddonsFeature:
     def test_addons_errors(self, mock_session):
         # Can't check outdated without version
         with pytest.raises(SystemExit) as e:
-            Addons(mock_session, format='table', outdated=True)()
+            Addons(mock_session, format='table', check_outdated=True)()
         assert e.value.code == 1
 
         # Can't check outdated if not list format
         with pytest.raises(SystemExit) as e:
-            Addons(mock_session, format='list', outdated=True)()
+            Addons(mock_session, format='list', check_outdated=True)()
         assert e.value.code == 1
         # TODO Add --outdated tests
 
