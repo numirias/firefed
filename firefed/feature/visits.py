@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from firefed.feature import Feature, output_formats
 from firefed.util import moz_datetime, moz_timestamp
-from firefed.output import info
+from firefed.output import out
 
 
 Visit = namedtuple('Visit', 'id from_visit visit_date url')
@@ -27,7 +27,7 @@ class Visits(Feature):
     @staticmethod
     def build_list(visits):
         for visit in visits:
-            info(moz_datetime(visit.visit_date), visit.url)
+            out(moz_datetime(visit.visit_date), visit.url)
 
     @staticmethod
     def build_csv(visits):

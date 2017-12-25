@@ -3,7 +3,7 @@ import sys
 from tabulate import tabulate
 
 from firefed.feature import Feature, output_formats, sqlite_data
-from firefed.output import info
+from firefed.output import out
 
 
 @output_formats(['table', 'csv'], default='table')
@@ -13,7 +13,7 @@ class Permissions(Feature):
                  columns=['origin', 'type'])
     def run(self, data):
         if self.format == 'table':
-            info(tabulate(data, headers=('Host', 'Permission')))
+            out(tabulate(data, headers=('Host', 'Permission')))
             return
         writer = csv.writer(sys.stdout)
         writer.writerow(('host', 'permission'))

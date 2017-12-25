@@ -1,20 +1,11 @@
 import logging
-
+import sys
 import colorama
 from colorama import Fore, Style
+from firefed.__version__ import __title__
 
 
-colorama.init()
-
-# TODO: dependency on colorama really necessary?
-def error(text):
-    print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL)
-
-def fatal(text):
-    error(text)
-    raise SystemExit(1)
-
-def info(*args, **kwargs):
+def out(*args, **kwargs):
     print(*args, **kwargs)
 
 def good(text):
@@ -26,15 +17,22 @@ def bad(text):
 def okay(text):
     return Fore.YELLOW + text + Style.RESET_ALL
 
-# TODO Refactor logging
-logger = logging.getLogger('firefed')
+def error(text):
+    print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL, file=sys.stderr)
 
-def init_logger():
+def fatal(text):
+    error(text)
+    raise SystemExit(1)
+
+def make_logger():
+    logger = logging.getLogger(__title__)
     logger.setLevel(logging.ERROR)
     handler = logging.StreamHandler()
     formatter = logging.Formatter('%(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+    return logger
 
-init_logger()
-log = logger.info
+colorama.init()
+logger = make_logger()
+info = logger.info

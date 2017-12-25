@@ -2,7 +2,7 @@ import re
 import requests
 
 from firefed.feature import Feature, argument
-from firefed.output import info, good, bad
+from firefed.output import out, good, bad
 
 
 pref_regex = r'\s*user_pref\((["\'])(.+?)\1,\s*(.+?)\);'
@@ -30,12 +30,12 @@ class Preference:
     @staticmethod
     def repr_to_type(val):
         if val in ['true', 'false']:
-            return True if val == 'true' else False
+            return val == 'true'
         else:
             try:
                 return int(val)
             except ValueError:
-                # Must be a string
+                # Value be a string, so we just need to cut the quotes
                 return val[1:-1]
 
 
@@ -51,12 +51,12 @@ class Preferences(Feature):
 
     @staticmethod
     def summarize(prefs):
-        info('%d custom preferences found.' % len(prefs))
+        out('%d custom preferences found.' % len(prefs))
 
     def run(self, prefs):
         if not self.check:
             for pref in prefs:
-                info(pref)
+                out(pref)
             return
         prefs_rec = list(self.parse_userjs(self.recommended))
         for pref in prefs:
@@ -66,15 +66,16 @@ class Preferences(Feature):
                 continue
             markup = good if pref_rec.value == pref.value else bad
             rec_text = markup(Preference.type_to_repr(pref_rec.value))
-            info(pref)
-            info('    Recommended: %s' % rec_text)
-            info('    Reason: %s' % pref_rec.info)
-            info()
+            out(pref)
+            out('    Recommended: %s' % rec_text)
+            out('    Reason: %s' % pref_rec.info)
+            out()
 
     def parse_prefs(self):
         with open(self.profile_path('prefs.js')) as f:
             data = f.read()
         matches = re.findall(pref_regex, data)
+        # TODO Unpack operator
         for match in matches:
             yield Preference(match[1], Preference.repr_to_type(match[2]))
 

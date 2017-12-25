@@ -9,9 +9,9 @@
             "os_name": "posix",
             "platform_machine": "x86_64",
             "platform_python_implementation": "CPython",
-            "platform_release": "4.14.5-1-ARCH",
+            "platform_release": "4.14.7-1-ARCH",
             "platform_system": "Linux",
-            "platform_version": "#1 SMP PREEMPT Sun Dec 10 14:50:30 UTC 2017",
+            "platform_version": "#1 SMP PREEMPT Sun Dec 17 19:13:39 UTC 2017",
             "python_full_version": "3.6.3",
             "python_version": "3.6",
             "sys_platform": "linux"
@@ -48,6 +48,13 @@
             ],
             "version": "==0.3.9"
         },
+        "deprecation": {
+            "hashes": [
+                "sha256:e28c4492c4ecbce87eb8f6e6827b554cbac52dbaac25c3d9eaeb27ed14d440e0",
+                "sha256:b9bff5cc91f601ef2a8a0200bc6cde3f18a48c2ed3d1ecbfc16076b14b3ad935"
+            ],
+            "version": "==1.0.1"
+        },
         "idna": {
             "hashes": [
                 "sha256:8c7309c718f94b3a625cb648ace320157ad16ff131ae0af362c9f21b80ef6ec4",
@@ -57,9 +64,9 @@
         },
         "lz4": {
             "hashes": [
-                "sha256:7d98158f9851c791187789d6e4410fde953c8c2b3b4dfff175ce02e479300ca8"
+                "sha256:055905fcd59289c0ebdf910a651289f9f934201e4ba100a2b486c0a0371cf962"
             ],
-            "version": "==0.12.0"
+            "version": "==0.15.0"
         },
         "requests": {
             "hashes": [

@@ -2,7 +2,7 @@ import csv
 import sys
 
 from firefed.feature import Feature, output_formats
-from firefed.output import info
+from firefed.output import out
 from firefed.util import moz_datetime, moz_timestamp
 
 
@@ -29,16 +29,16 @@ class History(Feature):
     def build_list(entries):
         for entry in entries:
             last_visit = moz_datetime(entry.last_visit_date)
-            info(entry.url)
-            info('    Title:      %s' % entry.title)
-            info('    Last visit: %s' % last_visit)
-            info('    Visits:     %s' % entry.visit_count)
-            info()
+            out(entry.url)
+            out('    Title:      %s' % entry.title)
+            out('    Last visit: %s' % last_visit)
+            out('    Visits:     %s' % entry.visit_count)
+            out()
 
     @staticmethod
     def build_short(entries):
         for entry in entries:
-            info(entry.url)
+            out(entry.url)
 
     @staticmethod
     def build_csv(entries):

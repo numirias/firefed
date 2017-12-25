@@ -79,7 +79,7 @@ def make_parser():
     parser.add_argument(
         '-v',
         '--verbose',
-        help='verbose output (up to 3 times)',  # TODO
+        help='verbose output (can be used multiple times)',
         action='count',
         dest='verbosity',
         default=0,

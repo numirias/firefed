@@ -3,7 +3,7 @@ import sys
 from collections import namedtuple
 
 from firefed.feature import Feature, output_formats
-from firefed.output import info, good
+from firefed.output import out, good
 from firefed.util import moz_timestamp
 
 
@@ -34,10 +34,10 @@ class Bookmarks(Feature):
         def walk(node, depth=0):
             if node.type == DIRECTORY_TYPE:
                 text = good('[%s]') % node.title
-                info('%s%s' % (depth * 4 * ' ', text))
+                out('%s%s' % (depth * 4 * ' ', text))
             else:
-                info('%s* %s' % (depth * 4 * ' ', node.title))
-                info('%s%s' % ((depth + 1) * 4 * ' ', node.url))
+                out('%s* %s' % (depth * 4 * ' ', node.title))
+                out('%s%s' % ((depth + 1) * 4 * ' ', node.url))
             children = [n for n in bookmarks if n.parent == node.id]
             for child in children:
                 walk(child, depth + 1)
@@ -57,7 +57,7 @@ class Bookmarks(Feature):
         for bookmark in bookmarks:
             if not bookmark.url:
                 continue
-            info('%s\n    %s' % (bookmark.title, bookmark.url))
+            out('%s\n    %s' % (bookmark.title, bookmark.url))
 
     @staticmethod
     def build_csv(bookmarks):

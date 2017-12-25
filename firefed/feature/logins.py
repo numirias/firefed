@@ -8,7 +8,7 @@ from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
 from tabulate import tabulate
 
 from firefed.feature import Feature, output_formats, argument
-from firefed.output import info, fatal
+from firefed.output import out, fatal
 
 
 class SECItem(ctypes.Structure):
@@ -92,13 +92,13 @@ class Logins(Feature):
 
     @staticmethod
     def summarize(logins_json):
-        info('%d logins found.' % len(logins_json))
+        out('%d logins found.' % len(logins_json))
 
     def run(self, logins_json):
         nss = self.nss
         if self.master_password is None:
             self.master_password = getpass.getpass(prompt='Master password: ')
-            info()
+            out()
         try:
             nss.check_password(self.master_password)
         except NSSError as e:
@@ -113,15 +113,15 @@ class Logins(Feature):
 
     @staticmethod
     def build_table(logins):
-        info(tabulate(logins, headers=['Host', 'Username', 'Password']))
+        out(tabulate(logins, headers=['Host', 'Username', 'Password']))
 
     @staticmethod
     def build_list(logins):
         for host, username, password in logins:
-            info(host)
-            info('    Username: %s' % username)
-            info('    Password: %s' % password)
-            info()
+            out(host)
+            out('    Username: %s' % username)
+            out('    Password: %s' % password)
+            out()
 
     @staticmethod
     def build_csv(logins):

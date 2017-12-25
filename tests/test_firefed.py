@@ -248,8 +248,8 @@ class TestCookiesFeature:
         assert file != session_file('nonexistent')
 
         Cookies(mock_session, session_file='nonexistent', format='list')()
-        out, _ = capsys.readouterr()
-        assert 'not found' in out
+        _, err = capsys.readouterr()
+        assert 'not found' in err
 
         Cookies(mock_session, format='csv')()
         out, _ = capsys.readouterr()
@@ -338,9 +338,9 @@ class TestLoginsFeature:
     def test_no_libnss(self, mock_session, capsys):
         with pytest.raises(SystemExit) as e:
             Logins(mock_session, libnss='nonexistent', format='csv')()
-        out, _ = capsys.readouterr()
+        _, err = capsys.readouterr()
         assert e.value.code == 1
-        assert 'Can\'t open libnss' in out
+        assert 'Can\'t open libnss' in err
 
     def test_pw_prompt(self, mock_session, capsys, monkeypatch):
         import getpass # noqa
@@ -354,9 +354,9 @@ class TestLoginsFeature:
     def test_wrong_pw(self, mock_session, capsys):
         with pytest.raises(SystemExit) as e:
             Logins(mock_session, master_password='wrong', format='csv')()
-        out, _ = capsys.readouterr()
+        _, err = capsys.readouterr()
         assert e.value.code == 1
-        assert 'Incorrect master password' in out
+        assert 'Incorrect master password' in err
 
 class TestPreferencesFeature:
 

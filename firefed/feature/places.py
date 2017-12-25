@@ -1,5 +1,5 @@
 from firefed.feature import Feature, sqlite_data
-from firefed.output import info
+from firefed.output import out
 
 
 DOWNLOAD_TYPE = 10
@@ -13,7 +13,7 @@ class Downloads(Feature):
         for id_, content in data:
             if id_ != DOWNLOAD_TYPE:
                 continue
-            info('%s' % content)
+            out('%s' % content)
 
 
 class Hosts(Feature):
@@ -21,7 +21,7 @@ class Hosts(Feature):
     @sqlite_data(db='places.sqlite', table='moz_hosts', columns=['host'])
     def run(self, data):
         for host in data:
-            info('%s' % host)
+            out('%s' % host)
 
 
 class InputHistory(Feature):
@@ -30,4 +30,4 @@ class InputHistory(Feature):
                  columns=['input'])
     def run(self, data):
         for input_ in data:
-            info('%s' % input_)
+            out('%s' % input_)

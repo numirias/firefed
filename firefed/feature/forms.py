@@ -1,5 +1,5 @@
 from firefed.feature import Feature, sqlite_data
-from firefed.output import info
+from firefed.output import out
 
 
 class Forms(Feature):
@@ -8,4 +8,4 @@ class Forms(Feature):
                  columns=['fieldname', 'value'])
     def run(self, data):
         for field, val in data:
-            info('%s=%s' % (field, val))
+            out('%s=%s' % (field, val))

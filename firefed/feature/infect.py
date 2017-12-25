@@ -6,7 +6,7 @@ from pathlib import Path
 import lz4
 
 from firefed.feature import Feature, argument
-from firefed.output import error, info, good, bad, fatal
+from firefed.output import error, out, good, bad, fatal
 
 
 startup_key = 'app-system-defaults'
@@ -121,12 +121,12 @@ class Infect(Feature):
                                                 addon_path))).is_file(),
         )
         if all(checks):
-            info(good('Extension seems installed.'))
+            out(good('Extension seems installed.'))
         else:
-            info(bad('Extension doesn\'t seem fully installed.'))
+            out(bad('Extension doesn\'t seem fully installed.'))
 
     def uninstall(self, addon):
-        info('Uninstalling...')
+        out('Uninstalling...')
         addons = self.extensions_json['addons']
         try:
             addons.remove(addon)
@@ -147,11 +147,11 @@ class Infect(Feature):
 
     def install(self, addon):
         if not self.yes:
-            info('Are you sure you want to infect profile "%s"? (y/N)' %
-                 self.session.profile)
+            out('Are you sure you want to infect profile "%s"? (y/N)' %
+                self.session.profile)
             if input().lower() not in ['y', 'yes']:
                 fatal('Cancelled.')
-        info('Installing...')
+        out('Installing...')
         if addon is not None:
             error('Addon entry "%s" already exists.' % addon_id)
         else:
@@ -178,7 +178,7 @@ class Infect(Feature):
         if os.path.isfile(target):
             error('XPI file already exists.')
         else:
-            info('Writing XPI file to "%s".' % target)
+            out('Writing XPI file to "%s".' % target)
             with ZipFile(target, 'w') as f:
                 for filename in os.listdir(source):
                     path = os.path.join(source, filename)
@@ -190,7 +190,7 @@ class Infect(Feature):
             self.extensions_json = json.load(f)
 
     def write_extensions_json(self):
-        info('Updating "extensions.json".')
+        out('Updating "extensions.json".')
         with open(self.profile_path(EXT_DB), 'w') as f:
             json.dump(self.extensions_json, f)
 
@@ -204,6 +204,6 @@ class Infect(Feature):
     def write_addon_startup_json(self):
         compressed = lz4.block.compress(
             bytes(json.dumps(self.addon_startup_json), 'utf-8'))
-        info('Updating "addonsStartup.json.lz4".')
+        out('Updating "addonsStartup.json.lz4".')
         with open(self.profile_path(ADDON_STARTUP_FILE), 'wb') as f:
             f.write(b'mozLz40\0' + compressed)

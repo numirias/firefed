@@ -9,7 +9,7 @@ import requests
 from tabulate import tabulate
 
 from firefed.feature import Feature, output_formats, argument
-from firefed.output import good, bad, okay, info, fatal
+from firefed.output import good, bad, okay, out, fatal
 
 
 # See constants defined in [1]
@@ -22,6 +22,9 @@ SIGNED_STATES = {
     3: 'system',
     4: 'privileged'
 }
+
+update_check_url = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}' # noqa
+
 
 def signed_state(text):
     return good(text) if text in (v for k, v in SIGNED_STATES.items()
@@ -38,8 +41,6 @@ Addon = collections.namedtuple('Addon',
 @argument('-o', '--outdated', action='store_true', help='[experimental] \
 check if addons are outdated (queries the addons.mozilla.org API)')
 class Addons(Feature):
-
-    update_check_url = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}' # noqa
 
     def prepare(self):
         if self.outdated and self.format != 'list':
@@ -59,8 +60,8 @@ class Addons(Feature):
 
     @staticmethod
     def summarize(addons):
-        info('%d addons found. (%d enabled)' %
-             (len(addons), sum(a.enabled for a in addons)))
+        out('%d addons found. (%d enabled)' %
+            (len(addons), sum(a.enabled for a in addons)))
 
     def load_addons(self):
         # We prefer "extensions.json" over "addons.json"
@@ -85,7 +86,7 @@ class Addons(Feature):
             signed = signed_state(addon.signed) if addon.signed is not None \
                 else '(empty)'
             visible = '' if addon.visible else bad('[invisible]')
-            info('%s (%s) %s %s' % (addon.name, addon.id, enabled, visible))
+            out('%s (%s) %s %s' % (addon.name, addon.id, enabled, visible))
             if self.outdated:
                 latest = self.check_outdated(addon, self.firefox_version)
                 if latest is None:
@@ -98,9 +99,9 @@ class Addons(Feature):
                 version_text = '%s %s' % (addon.version, outdated_text)
             else:
                 version_text = addon.version
-            info('    Version:   %s' % version_text)
-            info('    Signature: %s' % signed)
-            info()
+            out('    Version:   %s' % version_text)
+            out('    Signature: %s' % signed)
+            out()
 
     @staticmethod
     def build_table(addons):
@@ -112,8 +113,8 @@ class Addons(Feature):
             visible = good('true') if addon.visible else bad('false')
             table.append([addon.name, addon.id, addon.version, enabled, signed,
                           visible])
-        info(tabulate(table, headers=['Name', 'ID', 'Version', 'Status',
-                                      'Signature', 'Visible']))
+        out(tabulate(table, headers=['Name', 'ID', 'Version', 'Status',
+                                     'Signature', 'Visible']))
 
     @staticmethod
     def build_csv(addons):
@@ -121,8 +122,9 @@ class Addons(Feature):
         writer.writeheader()
         writer.writerows([addon._asdict() for addon in addons])
 
-    def check_outdated(self, addon, app_version):
-        url = self.update_check_url.format(
+    @staticmethod
+    def check_outdated(addon, app_version):
+        url = update_check_url.format(
             id=quote(addon.id),
             app_version=quote(app_version),
         )
