@@ -3,7 +3,7 @@ from pathlib import Path
 from pytest import fixture
 import shutil
 import sqlite3
-import lz4
+import lz4.block
 import json
 
 from firefed import Session

@@ -3,7 +3,7 @@ import os
 import sys
 from zipfile import ZipFile
 from pathlib import Path
-import lz4
+import lz4.block
 
 from firefed.feature import Feature, argument
 from firefed.output import error, out, good, bad, fatal

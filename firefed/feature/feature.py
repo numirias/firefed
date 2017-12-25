@@ -3,7 +3,7 @@ import argparse
 import json
 import sqlite3
 from pathlib import Path
-import lz4
+import lz4.block
 
 
 def argument(*args, **kwargs):
