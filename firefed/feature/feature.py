@@ -39,7 +39,7 @@ def sqlite_data(db, table, columns):
         return wrapper
     return decorator
 
-class NotMozLz4Exception(Exception):
+class NotMozLz4Error(Exception):
     pass
 
 class Feature(ABC):
@@ -126,7 +126,7 @@ class Feature(ABC):
     def load_mozlz4(self, path):
         with open(self.profile_path(path), 'rb') as f:
             if f.read(8) != b'mozLz40\0':
-                raise NotMozLz4Exception('Not Mozilla lz4 format.')
+                raise NotMozLz4Error('Not Mozilla lz4 format.')
             data = lz4.block.decompress(f.read())
         return data
 

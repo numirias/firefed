@@ -9,7 +9,7 @@ from firefed import Session
 from firefed.feature import Feature, output_formats, sqlite_data, argument, \
     Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, \
     Visits, Cookies, Addons, Logins, Preferences, Infect, Summary
-from firefed.feature.feature import NotMozLz4Exception
+from firefed.feature.feature import NotMozLz4Error
 from firefed.feature.cookies import Cookie, session_file
 
 
@@ -104,7 +104,7 @@ class TestFeature:
         assert Foo(c1='r1v1', c2='r1v2') in foos
 
         assert mock_feature.load_mozlz4('test_mozlz4.lz4') == b'foo'
-        with pytest.raises(NotMozLz4Exception):
+        with pytest.raises(NotMozLz4Error):
             mock_feature.load_mozlz4('test_json.json')
 
     def test_exec_sqlite(self, mock_feature):
