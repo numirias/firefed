@@ -243,7 +243,11 @@ def mock_feature(mock_session, MockFeature):
 
 @fixture(scope='function')
 def MockFeature():
+    import attr
+    @attr.s
     class MockFeature(Feature):
         def run(self):
+            pass
+        def summarize(self):
             pass
     return MockFeature

@@ -4,13 +4,13 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 import pytest
+import attr
+from attr import attrib, attrs
 
 from firefed import Session
-from firefed.feature import Feature, output_formats, sqlite_data, argument, \
-    Permissions, Forms, Bookmarks, History, Downloads, Hosts, InputHistory, \
-    Visits, Cookies, Addons, Logins, Preferences, Infect, Summary
+from firefed.feature import Feature, formatter, arg, Permissions, History, Cookies, Visits, Bookmarks, Downloads, Hosts, InputHistory, Forms, Addons, Logins, Preferences, Infect, Summary
 from firefed.feature.feature import NotMozLz4Error
-from firefed.feature.cookies import Cookie, session_file
+from firefed.feature.cookies import Cookie, session_file_type
 
 
 def parse_csv(str_):
@@ -18,45 +18,23 @@ def parse_csv(str_):
 
 class TestFeature:
 
-    def test_argument(self, mock_session):
-        @argument('-f', '--foo')
-        class SomeFeature(Feature):
-            def run(self):
-                pass
-        assert SomeFeature(mock_session, foo='x').foo == 'x'
-
-    def test_default_arguments(self, mock_session):
-        @argument('-f', '--foo', default='x')
-        class SomeFeature(Feature):
-            def run(self):
-                pass
-        assert SomeFeature(mock_session).foo == 'x'
-
-    def test_output_formats(self, mock_session):
-        @output_formats(['a', 'b', 'c'], default='b')
-        class SomeFeature(Feature):
-            def run(self):
-                pass
-        assert SomeFeature(mock_session, format='c').format == 'c'
-        assert SomeFeature(mock_session).format == 'b'
-
-    def test_init(self, MockFeature, mock_session):
-        feature = MockFeature(mock_session)
-        assert feature._defaults == {}
-
     def test_run(self, mock_session):
-        has_run = False
+        has_run = has_summarized = False
+        @attrs
         class SomeFeature(Feature):
             def run(self):
                 nonlocal has_run
                 has_run = True
-        feature = SomeFeature(mock_session)
-        feature()
+            def summarize(self):
+                nonlocal has_summarized
+                has_summarized = True
+        SomeFeature(mock_session)()
         assert has_run
-        assert 'summary' not in feature._defaults
+        assert not has_summarized
 
     def test_summarize(self, mock_session):
         has_run = has_summarized = False
+        @attrs
         class SomeFeature(Feature):
             def run(self):
                 nonlocal has_run
@@ -68,78 +46,108 @@ class TestFeature:
         assert not has_run
         assert has_summarized
 
-        feature = SomeFeature(mock_session)
-        feature()
-        assert 'summary' in feature._defaults
-
     def test_prepare(self, mock_session):
         has_prepared = has_run = False
+        @attrs
         class SomeFeature(Feature):
             def prepare(self):
                 nonlocal has_prepared
                 has_prepared = True
                 return 'somedata'
-            def run(self, data):
+            def run(self):
                 nonlocal has_run
                 has_run = True
-                assert data == 'somedata'
+            def summarize(self):
+                pass
         SomeFeature(mock_session)()
         assert has_prepared
         assert has_run
 
+    def test_arguments(self, mock_session, MockFeature):
+        @attrs
+        class SomeFeature(MockFeature):
+            my_arg1 = arg('-a', '--arg1')
+            my_arg2 = arg('-b', '--arg2')
+        assert SomeFeature(mock_session, my_arg1='x').my_arg1 == 'x'
+        assert SomeFeature(mock_session, my_arg1='x').my_arg2 == None
+
+    def test_default_arguments(self, mock_session, MockFeature):
+        @attrs
+        class SomeFeature(MockFeature):
+            my_foo = arg('-f', '--foo', default=2)
+        assert SomeFeature(mock_session).my_foo == 2
+
     def test_wrong_argument(self, mock_session, MockFeature):
         with pytest.raises(TypeError):
-            MockFeature(mock_session, unknown_argument=1)()
+            MockFeature(unknown_argument=1)
+
+    def test_formatters(self, mock_session, MockFeature):
+        @attrs
+        class SomeFeature(MockFeature):
+            @formatter('a')
+            def x(self):
+                pass
+            @formatter('b', default=True)
+            def y(self):
+                pass
+            @formatter('c')
+            def z(self):
+                pass
+        assert SomeFeature(mock_session, format='c').format == 'c'
+        assert SomeFeature(mock_session).format == 'b'
+
+    def test_formatters_no_default(self, mock_session, MockFeature):
+        @attrs
+        class SomeFeature(MockFeature):
+            @formatter('a')
+            def x(self):
+                pass
+        assert SomeFeature(mock_session).format == None
+
+    def test_build_format(self, MockFeature, mock_session):
+        has_run = False
+        @attrs
+        class SomeFeature(MockFeature):
+            @formatter('a')
+            def x(self):
+                nonlocal has_run
+                has_run = True
+        SomeFeature(mock_session, format='a').build_format()
+        assert has_run
+
+class TestFeatureHelpers:
 
     def test_profile_path(self, MockFeature):
         session = Session(profile='/foo/bar')
         feature = MockFeature(session)
         assert feature.profile_path('baz') == Path('/foo/bar/baz')
 
-    def test_loading(self, mock_feature):
+    def test_load_json(self, mock_feature):
         assert mock_feature.load_json('test_json.json')['foo']['bar'] == 2
 
-        Foo = namedtuple('Foo', 'c1 c2')
-        foos = mock_feature.load_sqlite('test_sqlite.sqlite', 't1', Foo)
+    def test_load_sqlite(self, mock_feature):
+        Foo = attr.make_class('Foo', ['c1', 'c2'])
+        foos = mock_feature.load_sqlite(
+            'test_sqlite.sqlite',
+            table='t1',
+            cls=Foo,
+        )
         assert Foo(c1='r1v1', c2='r1v2') in foos
 
+    def test_load_sqlite_map(self, mock_feature):
+        Foo = attr.make_class('Foo', ['obj_c1', 'c2'])
+        foos = mock_feature.load_sqlite(
+            'test_sqlite.sqlite',
+            table='t1',
+            cls=Foo,
+            column_map={'c1': 'obj_c1'},
+        )
+        assert Foo(obj_c1='r1v1', c2='r1v2') in foos
+
+    def test_load_mozlz4(self, mock_feature):
         assert mock_feature.load_mozlz4('test_mozlz4.lz4') == b'foo'
         with pytest.raises(NotMozLz4Error):
             mock_feature.load_mozlz4('test_json.json')
-
-    def test_exec_sqlite(self, mock_feature):
-        res = mock_feature.exec_sqlite('test_sqlite.sqlite',
-                                       'SELECT c2 from t1')
-        assert ('r2v2',) in res
-
-    def test_build_format(self, MockFeature, mock_session):
-        res = None
-        @output_formats(['foo'])
-        class MockFeatureFoo(MockFeature):
-            def build_foo(self, arg):
-                nonlocal res
-                res = arg
-        MockFeatureFoo(mock_session, format='foo').build_format(arg='baz')
-        assert res == 'baz'
-
-    def test_sqlite_data(self, mock_session):
-        data = None
-        class SomeFeature(Feature):
-            @sqlite_data(db='test_sqlite.sqlite', table='t1',
-                         columns=['c1', 'c2'])
-            def run(self, data_):
-                nonlocal data
-                data = data_
-        SomeFeature(mock_session)()
-        assert ('r1v1', 'r1v2') in data
-
-        class SomeFeature2(Feature):
-            @sqlite_data(db='nonexistent.sqlite', table='t1',
-                         columns=['c1', 'c2'])
-            def run(self, data):
-                pass
-        with pytest.raises(FileNotFoundError):
-            SomeFeature2(mock_session)()
 
 class TestSmallFeatures:
 
@@ -170,17 +178,24 @@ class TestSmallFeatures:
 
 class TestPermissionsFeature:
 
-    def test_formats(self, mock_session, capsys):
+    def test_table(self, mock_session, capsys):
         Permissions(mock_session, format='table')()
         out, _ = capsys.readouterr()
         assert ['https://two.example/',
                 'permission2'] in (line.split() for line in out.split('\n'))
+
+    def test_csv(self, mock_session, capsys):
         Permissions(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
         assert len(data) == 4
         assert data[0] == ['host', 'permission']
         assert ['https://two.example/', 'permission2'] in data
+
+    def test_summary(self, mock_session, capsys):
+        Permissions(mock_session, summary=True)()
+        out, _ = capsys.readouterr()
+        assert '3 permissions found' in out
 
 class TestHistoryFeature:
 
@@ -205,13 +220,14 @@ class TestHistoryFeature:
 
 class TestVisitsFeature:
 
-    def test_formats(self, mock_session, capsys):
+    def test_list(self, mock_session, capsys):
         Visits(mock_session, format='list')()
         out, _ = capsys.readouterr()
         lines = out.split('\n')
         assert '%s %s' % (datetime.fromtimestamp(1), 'http://one.example/') \
             in lines
 
+    def test_csv(self, mock_session, capsys):
         Visits(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
@@ -221,40 +237,42 @@ class TestVisitsFeature:
 class TestCookiesFeature:
 
     def test_single_cookie(self):
-        cookie = Cookie(name='foo', value='bar')
-        assert str(cookie) == 'foo=bar'
+        cookie = Cookie(name='foo', value='bar', host='x')
+        assert str(cookie) == 'foo=bar; Domain=x'
 
         cookie = Cookie(name='foo', value='bar', host='one.example',
                         path='/baz', secure=True, http_only=True)
         assert all(x in str(cookie).lower() for x in ['foo=bar', 'path=/baz',
                    'secure', 'httponly', 'domain=one.example'])
 
-    def test_cookies(self, mock_session, capsys):
+    def test_list(self, mock_session, capsys):
         Cookies(mock_session, format='list')()
         out, _ = capsys.readouterr()
         assert any(line.startswith('k1=v1') for line in out.split('\n'))
-
-        feature = Cookies(mock_session)
-        cookies = feature.load_ss_cookies('sessionstore.jsonlz4')
-        assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example')
-                   for c in cookies)
 
         Cookies(mock_session, host='tw*.example', format='list')()
         out, _ = capsys.readouterr()
         assert out.startswith('k2=v2')
 
-        file = session_file('sessionstore')
-        assert file == session_file('sessionstore.jsonlz4')
-        assert file != session_file('nonexistent')
-
-        Cookies(mock_session, session_file='nonexistent', format='list')()
-        _, err = capsys.readouterr()
-        assert 'not found' in err
-
+    def test_csv(self, mock_session, capsys):
         Cookies(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
         assert ['k1', 'v1', 'one.example', '/', '1', '0'] in data
+
+    def test_sessionstore(self, mock_session, capsys):
+        file = session_file_type('sessionstore')
+        assert file == session_file_type('sessionstore.jsonlz4')
+        assert file != session_file_type('nonexistent')
+
+        with pytest.raises(SystemExit) as e:
+            Cookies(mock_session, session_file='nonexistent', format='list')()
+        _, err = capsys.readouterr()
+        assert 'not found' in err
+
+        cookies = Cookies(mock_session).load_ss_cookies('sessionstore.jsonlz4')
+        assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example')
+                   for c in cookies)
 
 class TestBookmarksFeature:
 
@@ -322,15 +340,15 @@ class TestAddonsFeature:
 class TestLoginsFeature:
 
     def test_formats(self, mock_session, capsys):
-        Logins(mock_session, master_password='master', format='table')()
+        Logins(mock_session, password='master', format='table')()
         out, _ = capsys.readouterr()
         assert all(x in out for x in ['foo', 'bar'])
 
-        Logins(mock_session, master_password='master', format='list')()
+        Logins(mock_session, password='master', format='list')()
         out, _ = capsys.readouterr()
         assert all(x in out for x in ['foo', 'bar'])
 
-        Logins(mock_session, master_password='master', format='csv')()
+        Logins(mock_session, password='master', format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
         assert ['http://one.example', 'foo', 'bar'] in data
@@ -353,7 +371,7 @@ class TestLoginsFeature:
 
     def test_wrong_pw(self, mock_session, capsys):
         with pytest.raises(SystemExit) as e:
-            Logins(mock_session, master_password='wrong', format='csv')()
+            Logins(mock_session, password='wrong', format='csv')()
         _, err = capsys.readouterr()
         assert e.value.code == 1
         assert 'Incorrect master password' in err

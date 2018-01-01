@@ -1,44 +1,44 @@
-import csv
 from fnmatch import fnmatch
 import json
 from pathlib import Path
 import sys
+from attr import attrs, attrib
 
-from firefed.feature import Feature, output_formats, argument
-from firefed.output import error
+from firefed.feature import Feature, arg, formatter
+from firefed.output import error, out, fatal, csv_writer
 
 
+@attrs
 class Cookie:
 
-    column_map = {
-        'name': 'name',
-        'value': 'value',
-        'host': 'host',
-        'path': 'path',
-        'isSecure': 'secure',
-        'isHttpOnly': 'http_only',
-    }
-    _fields = tuple(column_map.values())
-
-    def __init__(self, **kwargs):
-        for field in self._fields:
-            try:
-                setattr(self, field, kwargs[field])
-            except KeyError:
-                setattr(self, field, None)
+    name = attrib()
+    value = attrib()
+    host = attrib()
+    path = attrib(default=None)
+    secure = attrib(default=None)
+    http_only = attrib(default=None)
 
     def __str__(self):
         # Re-assemble cookies based roughly on the 'Set-Cookie' format
-        text = '%s=%s' % (self.name, self.value)
+        s = '%s=%s' % (self.name, self.value)
         if self.host:
-            text += '; Domain=%s' % self.host
+            s += '; Domain=%s' % self.host
         if self.secure:
-            text += '; Secure'
+            s += '; Secure'
         if self.http_only:
-            text += '; HttpOnly'
+            s += '; HttpOnly'
         if self.path and self.path != '/':
-            text += '; Path=%s' % self.path
-        return text
+            s += '; Path=%s' % self.path
+        return s
+
+column_map = {
+    'name': 'name',
+    'value': 'value',
+    'host': 'host',
+    'path': 'path',
+    'isSecure': 'secure',
+    'isHttpOnly': 'http_only',
+}
 
 session_file_map = {
     'recovery': Path('sessionstore-backups/recovery.jsonlz4'),
@@ -46,32 +46,36 @@ session_file_map = {
     'sessionstore': Path('sessionstore.jsonlz4'),
 }
 
-def session_file(key):
+def session_file_type(key_or_path):
     try:
-        return session_file_map[key]
+        return session_file_map[key_or_path]
     except KeyError:
-        return Path(key)
+        return Path(key_or_path)
 
-
-@output_formats(['list', 'csv'], default='list')
-@argument('-H', '--host', help='filter by hostname (glob)')
-@argument('-s', '--session-file', type=session_file, help='extract cookies \
-          from session file (you can use %s as shortcuts for default file \
-          locations)' % ', '.join('"%s"' % s for s in session_file_map))
+@attrs
 class Cookies(Feature):
 
-    def run(self):
+    host = arg('-H', '--host', help='filter by hostname (glob)')
+    session_file = arg('-S', '--session-file', type=session_file_type, help=
+        'extract cookies from session file (you can use %s as shortcuts for '
+        'default file locations)' % ', '.join('"%s"' % s for s in session_file_map))
+
+    def prepare(self):
         if self.session_file:
             try:
                 cookies = self.load_ss_cookies(self.session_file)
             except FileNotFoundError as e:
-                error('Session file "%s" not found.' % e.filename)
-                return
+                fatal('Session file "%s" not found.' % e.filename)
         else:
-            cookies = self.load_sqlite('cookies.sqlite', 'moz_cookies', Cookie)
+            cookies = self.load_sqlite(
+                db='cookies.sqlite',
+                table='moz_cookies',
+                cls=Cookie,
+                column_map=column_map
+            )
         if self.host:
             cookies = [c for c in cookies if fnmatch(c.host, self.host)]
-        self.build_format(cookies)
+        self.cookies = cookies
 
     def load_ss_cookies(self, path):
         data = json.loads(self.load_mozlz4(path))
@@ -80,19 +84,22 @@ class Cookies(Feature):
             host=cookie['host'],
             name=cookie['name'],
             value=cookie['value'],
-            path=cookie['path'] if 'path' in cookie else None,
-            secure=cookie['secure'] if 'secure' in cookie else False,
-            http_only=cookie['httponly'] if 'httponly' in cookie else False,
+            path=cookie.get('path', None),
+            secure=cookie.get('secure', False),
+            http_only=cookie.get('httponly', False),
         ) for cookie in cookies]
 
-    @staticmethod
-    def build_list(cookies):
-        for cookie in cookies:
-            print(cookie)
+    def run(self):
+        self.build_format()
 
-    @staticmethod
-    def build_csv(cookies):
-        writer = csv.writer(sys.stdout)
-        writer.writerow(Cookie._fields)
-        for cookie in cookies:
-            writer.writerow((getattr(cookie, key) for key in Cookie._fields))
+    def summarize(self):
+        out('%d cookies found.' % len(self.cookies))
+
+    @formatter('list', default=True)
+    def format_list(self):
+        for cookie in self.cookies:
+            out(cookie)
+
+    @formatter('csv')
+    def format_csv(self):
+        Feature.csv_from_items(self.cookies)

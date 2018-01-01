@@ -5,9 +5,11 @@ import collections
 import getpass
 import ctypes
 from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
+import attr
+from attr import attrs, attrib
 from tabulate import tabulate
 
-from firefed.feature import Feature, output_formats, argument
+from firefed.feature import Feature, arg, formatter
 from firefed.output import out, fatal
 
 
@@ -80,51 +82,53 @@ class NSSWrapper:
 Login = collections.namedtuple('Login', 'host username password')
 
 
-@argument('-l', '--libnss', default='libnss3.so', help='path to libnss3')
-@argument('-p', '--master-password', help='profile\'s master password')
-@output_formats(['table', 'list', 'csv'], default='table')
+@attrs
 class Logins(Feature):
+
+
+    libnss = arg('-l', '--libnss', default='libnss3.so', help='path to libnss3')
+    password = arg('-p', '--master-password', help='profile\'s master password')
+
 
     def prepare(self):
         self.nss = NSSWrapper(self.libnss, self.session.profile)
         logins_json = self.load_json('logins.json')['logins']
-        return logins_json
+        self.logins = logins_json
 
-    @staticmethod
-    def summarize(logins_json):
-        out('%d logins found.' % len(logins_json))
+    def summarize(self):
+        out('%d logins found.' % len(self.logins))
 
-    def run(self, logins_json):
+    def run(self):
         nss = self.nss
-        if self.master_password is None:
-            self.master_password = getpass.getpass(prompt='Master password: ')
+        if self.password is None:
+            self.password = getpass.getpass(prompt='Master password: ')
             out()
         try:
-            nss.check_password(self.master_password)
+            nss.check_password(self.password)
         except NSSError as e:
             if e.name == 'SEC_ERROR_BAD_PASSWORD':
                 fatal('Incorrect master password (%s)' % e)
-        logins = [Login(
+        self.logins = [Login(
             host=login['hostname'],
             username=nss.decrypt(login['encryptedUsername']),
             password=nss.decrypt(login['encryptedPassword']),
-        ) for login in logins_json]
-        self.build_format(logins)
+        ) for login in self.logins]
+        self.build_format()
 
-    @staticmethod
-    def build_table(logins):
-        out(tabulate(logins, headers=['Host', 'Username', 'Password']))
+    @formatter('table', default=True)
+    def table(self):
+        out(tabulate(self.logins, headers=['Host', 'Username', 'Password']))
 
-    @staticmethod
-    def build_list(logins):
-        for host, username, password in logins:
+    @formatter('list')
+    def list(self):
+        for host, username, password in self.logins:
             out(host)
             out('    Username: %s' % username)
             out('    Password: %s' % password)
             out()
 
-    @staticmethod
-    def build_csv(logins):
+    @formatter('csv')
+    def csv(self):
         writer = csv.DictWriter(sys.stdout, fieldnames=Login._fields)
         writer.writeheader()
-        writer.writerows([l._asdict() for l in logins])
+        writer.writerows([l._asdict() for l in self.logins])

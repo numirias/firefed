@@ -1,5 +1,5 @@
 # flake8: noqa
-from .feature import Feature, argument, output_formats, sqlite_data
+from .feature import Feature, arg, formatter
 from .addons import Addons
 from .bookmarks import Bookmarks
 from .cookies import Cookies

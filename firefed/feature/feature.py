@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import argparse
+from collections import OrderedDict
 import csv
 import json
 import sqlite3
@@ -7,121 +8,60 @@ import sys
 from pathlib import Path
 import lz4.block
 import attr
+from attr import attrs, attrib
+
+from firefed.output import info
 
 
-def argument(*args, **kwargs):
-    def decorator(cls):
-        cls.args = cls.args + [(args, kwargs)]
-        return cls
-    return decorator
+class arg:
 
-def output_formats(choices, **kwargs):
-    return argument(
-        '-f',
-        '--format',
-        choices=choices,
-        help='output format',
-        **kwargs,
-    )
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
 
-def sqlite_data(db, table, columns):
+
+
+def formatter(name, default=False):
     def decorator(func):
-        def wrapper(obj):
-            db_path = obj.profile_path(db)
-            if not db_path.exists():
-                raise FileNotFoundError()
-            con = sqlite3.connect(str(db_path))
-            cursor = con.cursor()
-            res = cursor.execute('SELECT %s FROM %s' %
-                                 (','.join(columns), table)).fetchall()
-            con.close()
-            func(obj, res)
-        return wrapper
+        func._output_format = dict(name=name, default=default)
+        return func
     return decorator
+
 
 class NotMozLz4Error(Exception):
     pass
 
-class Feature(ABC):
 
-    description = '(no description)'
-    args = []
+class FeatureHelpersMixin:
 
-    def __init__(self, session, **kwargs):
-        self.session = session
-        for k, v in self._defaults.items():
-            setattr(self, k, kwargs.pop(k, v))
-        if kwargs:
-            raise TypeError('%s got unexpected keyword arguments: %s' %
-                            (self.__class__.__name__, kwargs))
-
-    def __call__(self):
-        if hasattr(self, 'summarize') and self.summary:
-            func = self.summarize
-        else:
-            func = self.run
-        if hasattr(self, 'prepare'):
-            func(self.prepare())
-        else:
-            func()
-
-    def __init_subclass__(cls):
-        if hasattr(cls, 'summarize'):
-            argument(
-                '-s',
-                '--summary',
-                action='store_true',
-                help='summarize results',
-            )(cls)
-
-    @property
-    def _defaults(self):
-        """Return dict of argument defaults."""
-        parser = argparse.ArgumentParser()
-        for args, kwargs in self.args:
-            parser.add_argument(*args, **kwargs)
-        return vars(parser.parse_args([]))
-
-    @abstractmethod
-    def run(self, prepared_data):
-        pass
-
-    def profile_path(self, path):
-        return Path(self.session.profile) / path
+    def load_sqlite(self, db, query=None, table=None, cls=None, column_map=None):
+        if column_map is None:
+            column_map = {}
+        db_path = self.profile_path(db)
+        if not db_path.exists():
+            raise FileNotFoundError()
+        def obj_factory(cursor, row):
+            dict_ = {}
+            for idx, col in enumerate(cursor.description):
+                new_name = column_map.get(col[0], col[0])
+                dict_[new_name] = row[idx]
+            return cls(**dict_)
+        con = sqlite3.connect(str(db_path))
+        con.row_factory = obj_factory
+        cursor = con.cursor()
+        if not query:
+            columns = [f.name for f in attr.fields(cls)]
+            for k, v in column_map.items():
+                columns[columns.index(v)] = k
+            query = 'SELECT %s FROM %s' % (','.join(columns), table)
+        res = cursor.execute(query).fetchall()
+        con.close()
+        return res
 
     def load_json(self, path):
         with open(self.profile_path(path)) as f:
             data = json.load(f)
         return data
-
-    def load_sqlite(self, db_path, table, cls):
-        def obj_factory(cursor, row):
-            dict_ = {}
-            for idx, col in enumerate(cursor.description):
-                try:
-                    new_name = cls.column_map[col[0]]
-                except AttributeError:
-                    new_name = col[0]
-                dict_[new_name] = row[idx]
-            return cls(**dict_)
-        con = sqlite3.connect(str(self.profile_path(db_path)))
-        con.row_factory = obj_factory
-        cursor = con.cursor()
-        try:
-            sql_fields = cls.column_map.keys()
-        except AttributeError:
-            sql_fields = cls._fields
-        result = cursor.execute('SELECT %s FROM %s' %
-                                (','.join(sql_fields), table)).fetchall()
-        con.close()
-        return result
-
-    def exec_sqlite(self, db_path, query):
-        con = sqlite3.connect(str(self.profile_path(db_path)))
-        cursor = con.cursor()
-        res = list(cursor.execute(query))
-        con.close()
-        return res
 
     def load_mozlz4(self, path):
         with open(self.profile_path(path), 'rb') as f:
@@ -130,14 +70,101 @@ class Feature(ABC):
             data = lz4.block.decompress(f.read())
         return data
 
-    def build_format(self, *args, **kwargs):
-        getattr(self, 'build_%s' % self.format)(*args, **kwargs)
-
     @staticmethod
-    def csv_from_items(item_type, items, stream=None):
+    def csv_from_items(items, stream=None):
+        cls = items[0].__class__
         if stream is None:
             stream = sys.stdout
-        fields = [a.name for a in attr.fields(item_type)]
+        fields = [f.name for f in attr.fields(cls)]
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         writer.writerows([attr.asdict(x) for x in items])
+
+    def profile_path(self, path):
+        return Path(self.session.profile) / path
+
+
+def get_default(arg):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(*arg.args, **arg.kwargs)
+    args = vars(parser.parse_args([]))
+    _, default = args.popitem()
+    return default
+
+
+@attrs
+class Feature(FeatureHelpersMixin, ABC):
+
+    _cli_args = None
+    description = '(no description)'
+    session = attrib()
+    summary = arg(
+        '-s', '--summary',
+        action='store_true',
+        help='summarize results',
+    )
+
+    def __call__(self):
+        info('Profile: %s', self.session.profile)
+        info('Feature: %s\n', self.__class__.__name__)
+        if hasattr(self, 'prepare'):
+            self.prepare()
+        if self.summary:
+            self.summarize()
+        else:
+            self.run()
+
+    def __init_subclass__(cls):
+        formatters = cls.formatters()
+        if formatters:
+            choices = formatters.keys()
+            default_format = next((name for name, m in formatters.items() if m._output_format['default']), None)
+            cls.format = arg(
+                '-f',
+                '--format',
+                choices=choices,
+                help='output format',
+                default=default_format,
+            )
+        cls._convert_arg_attribues()
+
+    @classmethod
+    def _convert_arg_attribues(cls):
+        """Convert all command line arguments to proper attributes.
+
+        Convert all arg() attributes to attrib() and register them als CLI args.
+        """
+        attribs = {a: getattr(cls, a, None) for a in dir(cls)}
+        cls._cli_args = {k: v for k, v in attribs.items() if isinstance(v, arg)}
+
+        for k, v in cls._cli_args.items():
+            default = get_default(v)
+            setattr(cls, k, attrib(default=default))
+
+    @classmethod
+    def formatters(cls):
+        """Return all formatters in the class.
+
+        Return a dict of all methods with an _output_format attribute.
+        """
+        return {m._output_format['name']: m for m in vars(cls).values() if callable(m) and getattr(m, '_output_format', None)}
+
+    @classmethod
+    def feature_map(cls):
+        return OrderedDict(
+            sorted(
+                ((c.__name__.lower(), c) for c in cls.__subclasses__()),
+                key=(lambda x: x[0])
+            )
+        )
+
+    def build_format(self):
+        self.formatters()[self.format](self) # TODO make _formatters underscore
+
+    @abstractmethod
+    def summarize(self):
+        pass
+
+    @abstractmethod
+    def run(self):
+        pass

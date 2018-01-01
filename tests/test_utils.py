@@ -46,3 +46,6 @@ class TestUtils:
         assert ts == 1
         dt = moz_datetime(1000000)
         assert dt == datetime.fromtimestamp(1)
+
+
+# TODO write proper tests for make_parser (argument names, etc.)

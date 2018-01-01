@@ -1,36 +1,59 @@
 import csv
 import sys
 from collections import namedtuple
+import attr
+from attr import attrs, attrib
 
-from firefed.feature import Feature, output_formats
-from firefed.output import out, good
-from firefed.util import moz_timestamp
+from firefed.feature import Feature, arg, formatter
+from firefed.output import out, good, csv_writer
+from firefed.util import moz_to_unix_timestamp
 
 
 DIRECTORY_TYPE = 2
-Bookmark = namedtuple('Bookmark', 'id parent type title guid added '
-                                  'last_modified url')
 
+@attrs
+class Bookmark:
 
-@output_formats(['tree', 'list', 'csv'], default='tree')
+    id = attrib()
+    parent = attrib()
+    type = attrib()
+    title = attrib()
+    guid = attrib()
+    added = attrib(converter=moz_to_unix_timestamp)
+    last_modified = attrib(converter=moz_to_unix_timestamp)
+    url = attrib()
+
+@attrs
 class Bookmarks(Feature):
 
-    def run(self):
-        res = self.exec_sqlite(
-            'places.sqlite',
-            '''SELECT b.id, b.parent, b.type, b.title, b.guid, b.dateAdded,
+    def prepare(self):
+        bmarks = self.load_sqlite(
+            db='places.sqlite',
+            query='''SELECT b.id, b.parent, b.type, b.title, b.guid, b.dateAdded,
             b.lastModified, p.url FROM moz_bookmarks b LEFT JOIN moz_places p
             ON b.fk = p.id
-            '''
+            ''',
+            cls=Bookmark,
+            column_map={
+                'lastModified': 'last_modified',
+                'dateAdded': 'added'
+            },
         )
-        bmarks = [Bookmark(*row) for row in res]
         # Remove pseudo-bookmarks from list
         bmarks = [b for b in bmarks if not str(b.url).startswith('place:')]
-        self.build_format(bmarks)
+        self.bmarks = bmarks
 
-    @staticmethod
-    def build_tree(bookmarks):
-        bookmark_map = {b.id: b for b in bookmarks}
+    def summarize(self):
+        out('%d bookmarks found.' % len(self.bmarks))
+
+    def run(self):
+        self.build_format()
+
+
+    @formatter('tree', default=True)
+    def tree(self):
+        bmarks = self.bmarks
+        bmark_map = {b.id: b for b in bmarks}
         def walk(node, depth=0):
             if node.type == DIRECTORY_TYPE:
                 text = good('[%s]') % node.title
@@ -38,33 +61,33 @@ class Bookmarks(Feature):
             else:
                 out('%s* %s' % (depth * 4 * ' ', node.title))
                 out('%s%s' % ((depth + 1) * 4 * ' ', node.url))
-            children = [n for n in bookmarks if n.parent == node.id]
+            children = [n for n in bmarks if n.parent == node.id]
             for child in children:
                 walk(child, depth + 1)
-        for bookmark in bookmarks:
+        for bmark in bmarks:
             try:
-                parent_guid = bookmark_map[bookmark.parent].guid
+                parent_guid = bmark_map[bmark.parent].guid
             except KeyError:
                 continue
-            if bookmark.title == '':
+            if bmark.title == '':
                 continue
             if parent_guid != 'root________':
                 continue
-            walk(bookmark)
+            walk(bmark)
 
-    @staticmethod
-    def build_list(bookmarks):
-        for bookmark in bookmarks:
-            if not bookmark.url:
+    @formatter('list')
+    def list(self):
+        for bmark in self.bmarks:
+            if not bmark.url:
                 continue
-            out('%s\n    %s' % (bookmark.title, bookmark.url))
+            out('%s\n    %s' % (bmark.title, bmark.url))
 
-    @staticmethod
-    def build_csv(bookmarks):
-        writer = csv.writer(sys.stdout)
+    @formatter('csv')
+    def csv(self):
+        writer = csv_writer()
         writer.writerow(('title', 'url', 'added', 'last_modified'))
-        for b in bookmarks:
+        for b in self.bmarks:
             if not b.url:
                 continue
-            writer.writerow((b.title, b.url, moz_timestamp(b.added),
-                             moz_timestamp(b.last_modified)))
+            writer.writerow((b.title, b.url, b.added,
+                             b.last_modified))

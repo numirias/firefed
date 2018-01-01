@@ -1,12 +1,18 @@
+import argparse
+
+import firefed.__version__ as version
+
 from firefed import Session
-from firefed.util import make_parser
+from firefed.util import profile_dir_type
+from firefed.feature import Feature
+from firefed import util
 
 
 def main():
-    parser = make_parser()
-    args = vars(parser.parse_args())
+    args = util.parse_args()
     session = Session(args.pop('profile'), args.pop('verbosity'))
-    session(args.pop('feature'), args)
+    feature = Feature.feature_map()[args.pop('feature')]
+    feature(session, **args)()
 
 
 if __name__ == '__main__':

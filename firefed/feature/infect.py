@@ -4,8 +4,9 @@ import sys
 from zipfile import ZipFile
 from pathlib import Path
 import lz4.block
+from attr import attrs
 
-from firefed.feature import Feature, argument
+from firefed.feature import Feature, arg, formatter
 from firefed.output import error, out, good, bad, fatal
 
 
@@ -92,14 +93,18 @@ def make_addon_entry(path):
     entry['path'] = os.path.join(path, EXT_DIR, addon_path)
     return entry
 
-
-@argument('-u', '--uninstall', help='uninstall malicious addon',
-          action='store_true', default=False, dest='want_uninstall')
-@argument('-c', '--check', help='check if profile appears infected',
-          action='store_true', default=False, dest='want_check')
-@argument('-y', '--yes', help='don\'t prompt for confirmation',
-          action='store_true', default=False)
+@attrs
 class Infect(Feature):
+
+    want_uninstall = arg('-u', '--uninstall', help='uninstall malicious addon',
+              action='store_true', default=False)
+    want_check = arg('-c', '--check', help='check if profile appears infected',
+              action='store_true', default=False)
+    yes = arg('-y', '--yes', help='don\'t prompt for confirmation',
+              action='store_true', default=False)
+
+    def summarize(self):
+        pass
 
     def run(self):
         self.read_extensions_json()

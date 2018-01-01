@@ -1,5 +1,4 @@
 import argparse
-from collections import OrderedDict
 from configparser import ConfigParser
 from datetime import datetime
 from pathlib import Path
@@ -35,22 +34,16 @@ def profile_dir(name):
         return mozilla_dir / profile_path
     return profile_path
 
-def feature_map():
-    from firefed.feature import Feature
-    return OrderedDict(
-        sorted(
-            ((m.__name__.lower(), m) for m in Feature.__subclasses__()),
-            key=(lambda x: x[0])
-        )
-    )
-
 def moz_datetime(ts):
     """Convert Mozilla timestamp to datetime."""
-    return datetime.fromtimestamp(moz_timestamp(ts))
+    return datetime.fromtimestamp(moz_to_unix_timestamp(ts))
 
-def moz_timestamp(ts):
+def moz_to_unix_timestamp(ts):
     """Convert Mozilla timestamp to Unix timestamp."""
-    return ts // 1000000
+    try:
+        return ts // 1000000
+    except TypeError:
+        return 0
 
 def profile_dir_type(dirname):
     try:
@@ -59,6 +52,7 @@ def profile_dir_type(dirname):
         raise argparse.ArgumentTypeError(e)
 
 def make_parser():
+    from firefed.feature import Feature
     parser = argparse.ArgumentParser(
         'firefed',
         description=version.__description__,
@@ -85,8 +79,14 @@ def make_parser():
         dest='feature',
     )
     subparsers.required = True
-    for name, Feature in feature_map().items():
-        feature_parser = subparsers.add_parser(name, help=Feature.description)
-        for args, kwargs in Feature.args:
-            feature_parser.add_argument(*args, **kwargs)
+    for name, feature in Feature.feature_map().items():
+        feature_parser = subparsers.add_parser(name, help=feature.description)
+        for attrib_name, arg in feature._cli_args.items():
+            kwargs = arg.kwargs
+            kwargs['dest'] = attrib_name
+            feature_parser.add_argument(*arg.args, **kwargs)
     return parser
+
+def parse_args():
+    parser = make_parser()
+    return vars(parser.parse_args())

@@ -1,3 +1,4 @@
+import csv
 import logging
 import sys
 import colorama
@@ -23,6 +24,9 @@ def error(text):
 def fatal(text):
     error(text)
     raise SystemExit(1)
+
+def csv_writer():
+    return csv.writer(sys.stdout)
 
 def make_logger():
     logger = logging.getLogger(__title__)

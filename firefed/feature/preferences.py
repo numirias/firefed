@@ -1,7 +1,9 @@
 import re
 import requests
+import attr
+from attr import attrs, attrib
 
-from firefed.feature import Feature, argument
+from firefed.feature import Feature, arg, formatter
 from firefed.output import out, good, bad
 
 
@@ -39,27 +41,28 @@ class Preference:
             return val[1:-1]
 
 
-@argument('-r', '--recommended', default='userjs-relaxed', help='path to \
-user.js file with recommended settings (use "userjs-master" or \
-"userjs-relaxed" to load userjs config from Github)')
-@argument('-c', '--check', action='store_true', help='check preferences for \
-dubious settings')
+@attrs
 class Preferences(Feature):
 
+    recommended = arg('-r', '--recommended', default='userjs-relaxed', help='path to \
+    user.js file with recommended settings (use "userjs-master" or \
+    "userjs-relaxed" to load userjs config from Github)')
+    check = arg('-c', '--check', action='store_true', help='check preferences for \
+    dubious settings')
+
     def prepare(self):
-        return list(self.parse_prefs())
+        self.prefs = list(self.parse_prefs())
 
-    @staticmethod
-    def summarize(prefs):
-        out('%d custom preferences found.' % len(prefs))
+    def summarize(self):
+        out('%d custom preferences found.' % len(self.prefs))
 
-    def run(self, prefs):
+    def run(self):
         if not self.check:
-            for pref in prefs:
+            for pref in self.prefs:
                 out(pref)
             return
         prefs_rec = list(self.parse_userjs(self.recommended))
-        for pref in prefs:
+        for pref in self.prefs:
             try:
                 pref_rec = next((p for p in prefs_rec if p.key == pref.key))
             except StopIteration:

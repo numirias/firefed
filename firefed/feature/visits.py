@@ -1,42 +1,50 @@
 import csv
 import sys
 from collections import namedtuple
+from datetime import datetime
+import attr
+from attr import attrs, attrib
 
-from firefed.feature import Feature, output_formats
-from firefed.util import moz_datetime, moz_timestamp
-from firefed.output import out
+from firefed.feature import Feature, arg, formatter
+from firefed.util import moz_to_unix_timestamp
+from firefed.output import out, csv_writer
 
 
-Visit = namedtuple('Visit', 'id from_visit visit_date url')
+@attrs
+class Visit:
 
+    id = attrib()
+    from_visit = attrib()
+    visit_date = attrib(converter=moz_to_unix_timestamp)
+    url = attrib()
 
-@output_formats(['list', 'csv'], default='list')
+@attrs
 class Visits(Feature):
 
-    def run(self):
-        res = self.exec_sqlite(
-            'places.sqlite',
-            '''SELECT v.id, v.from_visit, v.visit_date, p.url FROM
+    """Extract the history of visited URLs."""
+
+    def prepare(self):
+        visits = self.load_sqlite(
+            db='places.sqlite',
+            query='''SELECT v.id, v.from_visit, v.visit_date, p.url FROM
             moz_historyvisits v JOIN moz_places p ON v.place_id = p.id
-            '''
+            ''',
+            cls=Visit,
         )
-        visits = [Visit(*row) for row in res]
         visits.sort(key=lambda x: x.visit_date)
-        self.build_format(visits)
+        self.visits = visits
 
-    @staticmethod
-    def build_list(visits):
-        for visit in visits:
-            out(moz_datetime(visit.visit_date), visit.url)
+    def summarize(self):
+        out('%d visits found.' % len(self.visits))
 
-    @staticmethod
-    def build_csv(visits):
-        writer = csv.writer(sys.stdout)
-        writer.writerow(Visit._fields)
-        for visit in visits:
-            writer.writerow((
-                visit.id,
-                visit.from_visit,
-                moz_timestamp(visit.visit_date),
-                visit.url,
-            ))
+    def run(self):
+        self.build_format()
+
+    @formatter('list', default=True)
+    def list(self):
+        for visit in self.visits:
+            out(datetime.fromtimestamp(visit.visit_date), visit.url)
+
+    @formatter('csv')
+    def csv(self):
+        Feature.csv_from_items(self.visits)

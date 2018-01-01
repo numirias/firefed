@@ -6,7 +6,7 @@ from attr import attrib, attrs
 import requests
 from tabulate import tabulate
 
-from firefed.feature import Feature, output_formats, argument
+from firefed.feature import Feature, formatter, arg
 from firefed.output import out, good, bad, okay, fatal
 
 
@@ -72,14 +72,12 @@ class Addon:
         except AttributeError:
             return None
 
-@argument('-i', '--id', dest='addon_id', help='select specific addon by id')
-@argument('-V', '--firefox-version', help='Firefox version for which updates '
-          'should be checked')
-@argument('-o', '--outdated', action='store_true', dest='check_outdated',
-          help='[experimental] check if addons are outdated (queries the '
-          'addons.mozilla.org API)')
-@output_formats(['table', 'list', 'csv'], default='table')
+@attrs
 class Addons(Feature):
+
+    addon_id = arg('-i', '--id', help='select specific addon by id')
+    firefox_version = arg('-V', '--firefox-version', help='Firefox version for which updates should be checked')
+    check_outdated = arg('-o', '--outdated', action='store_true', help='[experimental] check if addons are outdated (queries the addons.mozilla.org API)')
 
     def prepare(self):
         if self.check_outdated:
@@ -92,7 +90,7 @@ class Addons(Feature):
         addons = list(self.load_addons())
         if self.addon_id:
             addons = [a for a in addons if a.id == self.addon_id]
-        return addons
+        self.addons = addons
 
     def load_addons(self):
         # We prefer "extensions.json" over "addons.json"
@@ -107,17 +105,17 @@ class Addons(Feature):
                 visible=addon.get('visible'),
             )
 
-    @staticmethod
-    def summarize(addons):
+    def summarize(self):
         out('%d addons found. (%d enabled)' %
-            (len(addons), sum(a.enabled for a in addons)))
+            (len(self.addons), sum(a.enabled for a in self.addons)))
 
-    def run(self, addons):
-        addons.sort(key=lambda a: not a.enabled)
-        self.build_format(addons)
+    def run(self):
+        self.addons.sort(key=lambda a: not a.enabled)
+        self.build_format()
 
-    def build_list(self, addons):
-        for addon in addons:
+    @formatter('list')
+    def build_list(self):
+        for addon in self.addons:
             out('%s (%s) %s %s' % (addon.name, addon.id, addon.enabled_markup,
                                    addon.visible_tag_markup))
             version = addon.version
@@ -126,8 +124,8 @@ class Addons(Feature):
             out('    Version:   %s' % version)
             out('    Signature: %s\n' % addon.signed_markup)
 
-    @staticmethod
-    def build_table(addons):
+    @formatter('table', default=True)
+    def build_table(self):
         headers = ['ID', 'Name', 'Version', 'Status', 'Signature', 'Visible']
         rows = [(
             addon.id,
@@ -136,11 +134,11 @@ class Addons(Feature):
             addon.enabled_markup,
             addon.signed_markup,
             addon.visible_bool_markup,
-        ) for addon in addons]
+        ) for addon in self.addons]
         out(tabulate(rows, headers=headers))
 
-    @staticmethod
-    def build_csv(addons):
-        Feature.csv_from_items(Addon, addons)
+    @formatter('csv')
+    def csv(self):
+        Feature.csv_from_items(self.addons)
 
 # noqa [1]: https://dxr.mozilla.org/mozilla-central/rev/967c95cee709756596860ed2a3e6ac06ea3a053f/toolkit/mozapps/extensions/AddonManager.jsm#3495

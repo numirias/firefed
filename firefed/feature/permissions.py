@@ -1,20 +1,41 @@
-import csv
 import sys
+import attr
+from attr import attrs, attrib
 from tabulate import tabulate
 
-from firefed.feature import Feature, output_formats, sqlite_data
-from firefed.output import out
+from firefed.feature import Feature, formatter, arg
+from firefed.output import out, csv_writer
 
 
-@output_formats(['table', 'csv'], default='table')
+@attrs
 class Permissions(Feature):
+    """Extract permissions granted to particular hosts (e.g. location sharing).
 
-    @sqlite_data(db='permissions.sqlite', table='moz_perms',
-                 columns=['origin', 'type'])
-    def run(self, data):
-        if self.format == 'table':
-            out(tabulate(data, headers=('Host', 'Permission')))
-            return
-        writer = csv.writer(sys.stdout)
-        writer.writerow(('host', 'permission'))
-        writer.writerows(data)
+    This feature extracts the stored permissions which the user has granted to
+    particular hosts (e.g. popups, location sharing, desktop notifications).
+    """
+
+    perms = attrib(default=None, init=False)
+
+    def prepare(self):
+        self.perms = self.load_sqlite(
+            db='permissions.sqlite',
+            table='moz_perms',
+            cls=attr.make_class('Permission', ['host', 'permission']),
+            column_map={'origin': 'host', 'type': 'permission'},
+        )
+
+    def summarize(self):
+        out('%d permissions found.' % len(self.perms))
+
+    def run(self):
+        self.build_format()
+
+    @formatter('table', default=True)
+    def table(self):
+        rows = [attr.astuple(p) for p in self.perms]
+        out(tabulate(rows, headers=('Host', 'Permission')))
+
+    @formatter('csv')
+    def csv(self):
+        Feature.csv_from_items(self.perms)
