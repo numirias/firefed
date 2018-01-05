@@ -1,16 +1,16 @@
 import base64
-import csv
-import sys
 import collections
-import getpass
+import csv
 import ctypes
-from ctypes import CDLL, c_char_p, cast, byref, c_void_p, string_at
-import attr
-from attr import attrs, attrib
+from ctypes import CDLL, byref, c_char_p, c_void_p, cast, string_at
+import getpass
+import sys
+
+from attr import attrs
 from tabulate import tabulate
 
 from firefed.feature import Feature, arg, formatter
-from firefed.output import out, fatal
+from firefed.output import fatal, out
 
 
 class SECItem(ctypes.Structure):
@@ -79,16 +79,17 @@ class NSSWrapper:
         raise NSSError(error_name, error_str)
 
 
+# TODO no namedtuple
 Login = collections.namedtuple('Login', 'host username password')
 
 
 @attrs
 class Logins(Feature):
 
-
-    libnss = arg('-l', '--libnss', default='libnss3.so', help='path to libnss3')
-    password = arg('-p', '--master-password', help='profile\'s master password')
-
+    libnss = arg('-l', '--libnss', default='libnss3.so',
+                 help='path to libnss3')
+    password = arg('-p', '--master-password',
+                   help='profile\'s master password')
 
     def prepare(self):
         self.nss = NSSWrapper(self.libnss, self.session.profile)

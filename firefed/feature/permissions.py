@@ -1,10 +1,9 @@
-import sys
 import attr
-from attr import attrs, attrib
+from attr import attrib, attrs
 from tabulate import tabulate
 
-from firefed.feature import Feature, formatter, arg
-from firefed.output import out, csv_writer
+from firefed.feature import Feature, formatter
+from firefed.output import out
 
 
 @attrs

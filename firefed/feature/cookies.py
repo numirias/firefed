@@ -1,11 +1,11 @@
 from fnmatch import fnmatch
 import json
 from pathlib import Path
-import sys
-from attr import attrs, attrib
+
+from attr import attrib, attrs
 
 from firefed.feature import Feature, arg, formatter
-from firefed.output import error, out, fatal, csv_writer
+from firefed.output import fatal, out
 
 
 @attrs
@@ -56,9 +56,10 @@ def session_file_type(key_or_path):
 class Cookies(Feature):
 
     host = arg('-H', '--host', help='filter by hostname (glob)')
-    session_file = arg('-S', '--session-file', type=session_file_type, help=
-        'extract cookies from session file (you can use %s as shortcuts for '
-        'default file locations)' % ', '.join('"%s"' % s for s in session_file_map))
+    session_file = arg('-S', '--session-file', type=session_file_type,
+                       help='extract cookies from session file (you can use %s'
+                       'as shortcuts for default file locations)' %
+                       ', '.join('"%s"' % s for s in session_file_map))
 
     def prepare(self):
         if self.session_file:

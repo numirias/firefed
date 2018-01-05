@@ -1,11 +1,10 @@
 import re
+
+from attr import attrs
 import requests
-import attr
-from attr import attrs, attrib
 
-from firefed.feature import Feature, arg, formatter
-from firefed.output import out, good, bad
-
+from firefed.feature import Feature, arg
+from firefed.output import bad, good, out
 
 pref_regex = r'\s*user_pref\((["\'])(.+?)\1,\s*(.+?)\);'
 userjs_url = 'https://raw.githubusercontent.com/pyllyukko/user.js/%s/user.js'

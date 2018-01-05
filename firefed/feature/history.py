@@ -1,11 +1,10 @@
-import sys
 from datetime import datetime
-import attr
-from attr import attrs, attrib
+
+from attr import attrib, attrs
 
 from firefed.feature import Feature, formatter
-from firefed.output import out, csv_writer
-from firefed.util import moz_to_unix_timestamp, moz_datetime
+from firefed.output import out
+from firefed.util import moz_to_unix_timestamp
 
 
 @attrs

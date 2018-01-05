@@ -1,9 +1,8 @@
 import attr
 from attr import attrs
 
-from firefed.feature import Feature, formatter, arg
+from firefed.feature import Feature
 from firefed.output import out
-
 
 DOWNLOAD_TYPE = 10
 DB = 'places.sqlite'
@@ -59,5 +58,5 @@ class InputHistory(Feature):
         out('%d input history entries found.' % len(self.data))
 
     def run(self):
-        for input in self.data:
-            out('%s' % input.input)
+        for entry in self.data:
+            out('%s' % entry.input)

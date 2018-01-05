@@ -1,11 +1,5 @@
-import argparse
-
-import firefed.__version__ as version
-
-from firefed import Session
-from firefed.util import profile_dir_type
+from firefed import Session, util
 from firefed.feature import Feature
-from firefed import util
 
 
 def main():

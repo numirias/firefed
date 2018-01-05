@@ -1,8 +1,10 @@
 import csv
 import logging
 import sys
+
 import colorama
 from colorama import Fore, Style
+
 from firefed.__version__ import __title__
 
 

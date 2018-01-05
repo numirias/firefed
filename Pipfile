@@ -11,7 +11,7 @@ tabulate = "*"
 colorama = "*"
 "lz4" = "*"
 requests = "*"
-attrs = "*"
+attrs = ">=17.4"
 
 
 [dev-packages]

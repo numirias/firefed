@@ -1,16 +1,19 @@
-from collections import namedtuple
 import csv
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-import pytest
+
 import attr
-from attr import attrib, attrs
+from attr import attrs
+import pytest
 
 from firefed import Session
-from firefed.feature import Feature, formatter, arg, Permissions, History, Cookies, Visits, Bookmarks, Downloads, Hosts, InputHistory, Forms, Addons, Logins, Preferences, Infect, Summary
-from firefed.feature.feature import NotMozLz4Error
+from firefed.feature import (Addons, Bookmarks, Cookies, Downloads, Feature,
+                             Forms, History, Hosts, Infect, InputHistory,
+                             Logins, Permissions, Preferences, Summary, Visits,
+                             arg, formatter)
 from firefed.feature.cookies import Cookie, session_file_type
+from firefed.feature.feature import NotMozLz4Error
 
 
 def parse_csv(str_):
@@ -69,7 +72,7 @@ class TestFeature:
             my_arg1 = arg('-a', '--arg1')
             my_arg2 = arg('-b', '--arg2')
         assert SomeFeature(mock_session, my_arg1='x').my_arg1 == 'x'
-        assert SomeFeature(mock_session, my_arg1='x').my_arg2 == None
+        assert SomeFeature(mock_session, my_arg1='x').my_arg2 is None
 
     def test_default_arguments(self, mock_session, MockFeature):
         @attrs
@@ -80,6 +83,12 @@ class TestFeature:
     def test_wrong_argument(self, mock_session, MockFeature):
         with pytest.raises(TypeError):
             MockFeature(unknown_argument=1)
+
+    def test_feature_map(self):
+        fmap = Feature.feature_map()
+        assert len(fmap) > 1
+        assert fmap['summary'] is Summary
+        assert Feature not in fmap.values()
 
     def test_formatters(self, mock_session, MockFeature):
         @attrs
@@ -102,7 +111,7 @@ class TestFeature:
             @formatter('a')
             def x(self):
                 pass
-        assert SomeFeature(mock_session).format == None
+        assert SomeFeature(mock_session).format is None
 
     def test_build_format(self, MockFeature, mock_session):
         has_run = False
@@ -267,6 +276,7 @@ class TestCookiesFeature:
 
         with pytest.raises(SystemExit) as e:
             Cookies(mock_session, session_file='nonexistent', format='list')()
+        assert e.value.code == 1
         _, err = capsys.readouterr()
         assert 'not found' in err
 

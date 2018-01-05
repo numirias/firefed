@@ -1,12 +1,11 @@
 import argparse
 from datetime import datetime
-import pytest
 import os
 
+import pytest
 
-from firefed.feature import Feature, Summary
-from firefed.util import profile_dir, profile_dir_type, ProfileNotFoundError, \
-    feature_map, moz_datetime, moz_timestamp, make_parser
+from firefed.util import (ProfileNotFoundError, make_parser, moz_datetime,
+                          moz_to_unix_timestamp, profile_dir, profile_dir_type)
 
 
 class TestUtils:
@@ -35,14 +34,8 @@ class TestUtils:
         out, _ = capsys.readouterr()
         assert out.startswith('usage:')
 
-    def test_feature_map(self):
-        fmap = feature_map()
-        assert len(fmap) > 1
-        assert fmap['summary'] is Summary
-        assert Feature not in fmap.values()
-
     def test_timestamps(self):
-        ts = moz_timestamp(1000000)
+        ts = moz_to_unix_timestamp(1000000)
         assert ts == 1
         dt = moz_datetime(1000000)
         assert dt == datetime.fromtimestamp(1)

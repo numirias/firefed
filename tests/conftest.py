@@ -1,15 +1,15 @@
 # flake8: noqa
+import json
 from pathlib import Path
-from pytest import fixture
 import shutil
 import sqlite3
+
 import lz4.block
-import json
+from pytest import fixture
 
 from firefed import Session
 from firefed.feature import Feature
 from firefed.util import make_parser
-
 
 # TODO: Refactor make_*_sqlite
 

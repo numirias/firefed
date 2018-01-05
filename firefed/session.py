@@ -1,7 +1,8 @@
 import logging
+
 import attr
 
-from firefed.output import logger, info
+from firefed.output import logger
 
 
 @attr.s

@@ -1,14 +1,16 @@
+# pylint: disable=protected-access
 from abc import ABC, abstractmethod
 import argparse
 from collections import OrderedDict
 import csv
 import json
+from pathlib import Path
 import sqlite3
 import sys
-from pathlib import Path
-import lz4.block
+
 import attr
-from attr import attrs, attrib
+from attr import attrib, attrs
+import lz4.block
 
 from firefed.output import info
 
@@ -19,22 +21,19 @@ class arg:
         self.args = args
         self.kwargs = kwargs
 
-
-
 def formatter(name, default=False):
     def decorator(func):
         func._output_format = dict(name=name, default=default)
         return func
     return decorator
 
-
 class NotMozLz4Error(Exception):
     pass
 
-
 class FeatureHelpersMixin:
 
-    def load_sqlite(self, db, query=None, table=None, cls=None, column_map=None):
+    def load_sqlite(self, db, query=None, table=None, cls=None,
+                    column_map=None):
         if column_map is None:
             column_map = {}
         db_path = self.profile_path(db)
@@ -95,7 +94,7 @@ def get_default(arg):
 @attrs
 class Feature(FeatureHelpersMixin, ABC):
 
-    _cli_args = None
+    cli_args = None
     description = '(no description)'
     session = attrib()
     summary = arg(
@@ -118,7 +117,8 @@ class Feature(FeatureHelpersMixin, ABC):
         formatters = cls.formatters()
         if formatters:
             choices = formatters.keys()
-            default_format = next((name for name, m in formatters.items() if m._output_format['default']), None)
+            default_format = next((name for name, m in formatters.items() if
+                                   m._output_format['default']), None)
             cls.format = arg(
                 '-f',
                 '--format',
@@ -132,12 +132,12 @@ class Feature(FeatureHelpersMixin, ABC):
     def _convert_arg_attribues(cls):
         """Convert all command line arguments to proper attributes.
 
-        Convert all arg() attributes to attrib() and register them als CLI args.
+        Convert all arg() attributes to attrib() and register them as CLI args.
         """
         attribs = {a: getattr(cls, a, None) for a in dir(cls)}
-        cls._cli_args = {k: v for k, v in attribs.items() if isinstance(v, arg)}
-
-        for k, v in cls._cli_args.items():
+        cli_args = {k: v for k, v in attribs.items() if isinstance(v, arg)}
+        cls.cli_args = cli_args
+        for k, v in cli_args.items():
             default = get_default(v)
             setattr(cls, k, attrib(default=default))
 
@@ -147,7 +147,8 @@ class Feature(FeatureHelpersMixin, ABC):
 
         Return a dict of all methods with an _output_format attribute.
         """
-        return {m._output_format['name']: m for m in vars(cls).values() if callable(m) and getattr(m, '_output_format', None)}
+        return {m._output_format['name']: m for m in vars(cls).values() if
+                callable(m) and getattr(m, '_output_format', None)}
 
     @classmethod
     def feature_map(cls):

@@ -2,13 +2,13 @@ from distutils.version import LooseVersion
 from io import StringIO
 from urllib.parse import quote
 from xml.etree import ElementTree
+
 from attr import attrib, attrs
 import requests
 from tabulate import tabulate
 
-from firefed.feature import Feature, formatter, arg
-from firefed.output import out, good, bad, okay, fatal
-
+from firefed.feature import Feature, arg, formatter
+from firefed.output import bad, fatal, good, okay, out
 
 # See constants defined in [1]
 SIGNED_STATES = {
@@ -76,8 +76,12 @@ class Addon:
 class Addons(Feature):
 
     addon_id = arg('-i', '--id', help='select specific addon by id')
-    firefox_version = arg('-V', '--firefox-version', help='Firefox version for which updates should be checked')
-    check_outdated = arg('-o', '--outdated', action='store_true', help='[experimental] check if addons are outdated (queries the addons.mozilla.org API)')
+    firefox_version = arg('-V', '--firefox-version',
+                          help='Firefox version for which updates should be '
+                               'checked')
+    check_outdated = arg('-o', '--outdated', action='store_true',
+                         help='[experimental] check if addons are outdated '
+                              '(queries the addons.mozilla.org API)')
 
     def prepare(self):
         if self.check_outdated:

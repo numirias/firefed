@@ -1,14 +1,14 @@
 import json
 import os
+from pathlib import Path
 import sys
 from zipfile import ZipFile
-from pathlib import Path
-import lz4.block
+
 from attr import attrs
+import lz4.block
 
-from firefed.feature import Feature, arg, formatter
-from firefed.output import error, out, good, bad, fatal
-
+from firefed.feature import Feature, arg
+from firefed.output import bad, error, fatal, good, out
 
 startup_key = 'app-system-defaults'
 addon_id = '@testpilot-addon'  # ID is in whitelist for legacy extensions
@@ -97,9 +97,9 @@ def make_addon_entry(path):
 class Infect(Feature):
 
     want_uninstall = arg('-u', '--uninstall', help='uninstall malicious addon',
-              action='store_true', default=False)
+                         action='store_true', default=False)
     want_check = arg('-c', '--check', help='check if profile appears infected',
-              action='store_true', default=False)
+                     action='store_true', default=False)
     yes = arg('-y', '--yes', help='don\'t prompt for confirmation',
               action='store_true', default=False)
 

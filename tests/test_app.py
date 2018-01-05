@@ -1,9 +1,10 @@
-import pytest
-from unittest import mock
 import sys
+from unittest import mock
 
-import firefed.__main__
+import pytest
+
 from firefed import Session
+import firefed.__main__
 
 
 @pytest.fixture(scope='function')

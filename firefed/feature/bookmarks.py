@@ -1,13 +1,8 @@
-import csv
-import sys
-from collections import namedtuple
-import attr
-from attr import attrs, attrib
+from attr import attrib, attrs
 
-from firefed.feature import Feature, arg, formatter
-from firefed.output import out, good, csv_writer
+from firefed.feature import Feature, formatter
+from firefed.output import csv_writer, good, out
 from firefed.util import moz_to_unix_timestamp
-
 
 DIRECTORY_TYPE = 2
 
@@ -48,7 +43,6 @@ class Bookmarks(Feature):
 
     def run(self):
         self.build_format()
-
 
     @formatter('tree', default=True)
     def tree(self):
