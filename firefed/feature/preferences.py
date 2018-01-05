@@ -1,6 +1,6 @@
 import re
 
-from attr import attrs
+from attr import attrs, attrib
 import requests
 
 from firefed.feature import Feature, arg
@@ -10,13 +10,12 @@ pref_regex = r'\s*user_pref\((["\'])(.+?)\1,\s*(.+?)\);'
 userjs_url = 'https://raw.githubusercontent.com/pyllyukko/user.js/%s/user.js'
 
 
-# TODO Use attr
+@attrs
 class Preference:
 
-    def __init__(self, key, value, info=None):
-        self.key = key
-        self.value = value
-        self.info = info
+    key = attrib()
+    value = attrib()
+    info = attrib(default=None)
 
     def __str__(self):
         return '%s = %s' % (self.key, self.type_to_repr(self.value))
@@ -78,9 +77,8 @@ class Preferences(Feature):
         with open(self.profile_path('prefs.js')) as f:
             data = f.read()
         matches = re.findall(pref_regex, data)
-        # TODO Unpack operator
-        for match in matches:
-            yield Preference(match[1], Preference.repr_to_type(match[2]))
+        for _, key, value in matches:
+            yield Preference(key, Preference.repr_to_type(value))
 
     @staticmethod
     def parse_userjs(filename):
