@@ -17,8 +17,7 @@ class Visit:
 
 @attrs
 class Visits(Feature):
-
-    """Extract the history of visited URLs."""
+    """Extract history of visited URLs."""
 
     def prepare(self):
         visits = self.load_sqlite(

@@ -20,6 +20,7 @@ class Bookmark:
 
 @attrs
 class Bookmarks(Feature):
+    """List bookmarks."""
 
     def prepare(self):
         bmarks = self.load_sqlite(

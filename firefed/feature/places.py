@@ -10,6 +10,7 @@ DB = 'places.sqlite'
 
 @attrs
 class Downloads(Feature):
+    """List downloaded files."""
 
     def prepare(self):
         self.data = self.load_sqlite(
@@ -29,6 +30,7 @@ class Downloads(Feature):
 
 @attrs
 class Hosts(Feature):
+    """List known hosts."""
 
     def prepare(self):
         self.data = self.load_sqlite(
@@ -46,6 +48,7 @@ class Hosts(Feature):
 
 @attrs
 class InputHistory(Feature):
+    """List history of urlbar inputs (typed URLs)."""
 
     def prepare(self):
         self.data = self.load_sqlite(

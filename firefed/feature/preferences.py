@@ -42,6 +42,7 @@ class Preference:
 
 @attrs
 class Preferences(Feature):
+    """Extract user preferences. (This doesn't include defaults.)"""
 
     recommended = arg('-r', '--recommended', default='userjs-relaxed', help='path to \
     user.js file with recommended settings (use "userjs-master" or \

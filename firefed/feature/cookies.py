@@ -54,6 +54,7 @@ def session_file_type(key_or_path):
 
 @attrs
 class Cookies(Feature):
+    """Extract cookies."""
 
     host = arg('-H', '--host', help='filter by hostname (glob)')
     session_file = arg('-S', '--session-file', type=session_file_type,

@@ -6,14 +6,12 @@ from firefed.feature import Feature
 @attrs
 class Summary(Feature):
 
-    def summarize(self):
-        pass
+    """Create report summary."""
 
     def run(self):
         features = Feature.__subclasses__()
         features.remove(Summary)
         for Feature_ in features:
-            if not hasattr(Feature_, 'summarize'):
-                print('hey')
+            if Feature_.summary:
                 continue
             Feature_(self.session, summary=True)()

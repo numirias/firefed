@@ -124,10 +124,20 @@ class TestFeature:
         SomeFeature(mock_session, format='a').build_format()
         assert has_run
 
+    def test_description(self, MockFeature):
+        class SomeFeature(Feature):
+            """A description.
+
+            More Text."""
+        class SomeFeature2(Feature):
+            pass
+        assert SomeFeature.description() == 'A description.'
+        assert SomeFeature2.description() == '(no description)'
+
 class TestFeatureHelpers:
 
     def test_profile_path(self, MockFeature):
-        session = Session(profile='/foo/bar')
+        session = Session(profile=Path('/foo/bar'))
         feature = MockFeature(session)
         assert feature.profile_path('baz') == Path('/foo/bar/baz')
 

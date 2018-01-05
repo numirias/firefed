@@ -4,7 +4,6 @@ import argparse
 from collections import OrderedDict
 import csv
 import json
-from pathlib import Path
 import sqlite3
 import sys
 
@@ -15,11 +14,34 @@ import lz4.block
 from firefed.output import info
 
 
-class arg:
+class Argument:
+    """Wrapper for an attribute that can be given as a command line argument.
 
+    This class proxies argparse's add_argument() and takes the same arguments.
+    Its purpose is to specify a feature attribute that can also be set as a
+    command-line argument.
+    """
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
+
+    @property
+    def default(self):
+        """Return the argument default value.
+
+        To determine the value, the argument is passed through a mocked-up
+        argument parser. This way, we get defaults even if the feature is
+        called directly and not through the CLI.
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument(*self.args, **self.kwargs)
+        args = vars(parser.parse_args([]))
+        _, default = args.popitem()
+        return default
+
+
+arg = Argument
+
 
 def formatter(name, default=False):
     def decorator(func):
@@ -27,13 +49,16 @@ def formatter(name, default=False):
         return func
     return decorator
 
+
 class NotMozLz4Error(Exception):
     pass
+
 
 class FeatureHelpersMixin:
 
     def load_sqlite(self, db, query=None, table=None, cls=None,
                     column_map=None):
+        """Load data from sqlite db and return as list of specified objects."""
         if column_map is None:
             column_map = {}
         db_path = self.profile_path(db)
@@ -53,24 +78,33 @@ class FeatureHelpersMixin:
             for k, v in column_map.items():
                 columns[columns.index(v)] = k
             query = 'SELECT %s FROM %s' % (','.join(columns), table)
-        res = cursor.execute(query).fetchall()
+        res = cursor.execute(query).fetchall() # TODO Use generator
         con.close()
         return res
 
     def load_json(self, path):
+        """Load a JSON file from the user profile."""
         with open(self.profile_path(path)) as f:
             data = json.load(f)
         return data
 
     def load_mozlz4(self, path):
+        """Load a Mozilla LZ4 file from the user profile.
+
+        Mozilla LZ4 is regular LZ4 with a custom string prefix.
+        """
         with open(self.profile_path(path), 'rb') as f:
             if f.read(8) != b'mozLz40\0':
-                raise NotMozLz4Error('Not Mozilla lz4 format.')
+                raise NotMozLz4Error('Not Mozilla LZ4 format.')
             data = lz4.block.decompress(f.read())
         return data
 
     @staticmethod
     def csv_from_items(items, stream=None):
+        """Write a list of items to stream in CSV format.
+
+        The items need to be attrs-decorated.
+        """
         cls = items[0].__class__
         if stream is None:
             stream = sys.stdout
@@ -80,40 +114,32 @@ class FeatureHelpersMixin:
         writer.writerows([attr.asdict(x) for x in items])
 
     def profile_path(self, path):
-        return Path(self.session.profile) / path
-
-
-def get_default(arg):
-    parser = argparse.ArgumentParser()
-    parser.add_argument(*arg.args, **arg.kwargs)
-    args = vars(parser.parse_args([]))
-    _, default = args.popitem()
-    return default
+        """Return path from current profile."""
+        return self.session.profile / path
 
 
 @attrs
 class Feature(FeatureHelpersMixin, ABC):
+    """Abstract base class for features.
 
+    All features derive from this class and will be automatically registered by
+    the argument parser.
+
+    Features must use an @attrs class decorator and declare attributes on the
+    class level via attrib(), not inside an __init__ function. Attributes that
+    should be settable as command-line arguments, should use arg().
+    """
     cli_args = None
-    description = '(no description)'
+    summary = None
     session = attrib()
-    summary = arg(
-        '-s', '--summary',
-        action='store_true',
-        help='summarize results',
-    )
-
-    def __call__(self):
-        info('Profile: %s', self.session.profile)
-        info('Feature: %s\n', self.__class__.__name__)
-        if hasattr(self, 'prepare'):
-            self.prepare()
-        if self.summary:
-            self.summarize()
-        else:
-            self.run()
 
     def __init_subclass__(cls):
+        """Initialize feature subclass with the appropriate arguments.
+
+        If the feature has formatters, a format argument is added. All arg()
+        attributes are registered as command-line arguments and converted to
+        attrib().
+        """
         formatters = cls.formatters()
         if formatters:
             choices = formatters.keys()
@@ -126,7 +152,38 @@ class Feature(FeatureHelpersMixin, ABC):
                 help='output format',
                 default=default_format,
             )
+        if getattr(cls, 'summarize') is not getattr(Feature, 'summarize'):
+            cls.summary = arg(
+                '-s', '--summary',
+                action='store_true',
+                help='summarize results',
+            )
         cls._convert_arg_attribues()
+
+    def __call__(self):
+        """Execute the feature.
+
+        First, prepare() is called. Then either summarize() or run() is called
+        depending on the configuration.
+        """
+        info('Profile: %s', self.session.profile)
+        info('Feature: %s\n', self.__class__.__name__)
+        self.prepare()
+        if self.summary:
+            self.summarize()
+        else:
+            self.run()
+
+    @classmethod
+    def description(cls):
+        """Return a description of the feature (used in the help message).
+
+        If not overwitten, the description is the first line of the docstring.
+        """
+        try:
+            return cls.__doc__.split('\n')[0]
+        except AttributeError:
+            return '(no description)'
 
     @classmethod
     def _convert_arg_attribues(cls):
@@ -134,16 +191,16 @@ class Feature(FeatureHelpersMixin, ABC):
 
         Convert all arg() attributes to attrib() and register them as CLI args.
         """
-        attribs = {a: getattr(cls, a, None) for a in dir(cls)}
-        cli_args = {k: v for k, v in attribs.items() if isinstance(v, arg)}
+        # TODO Do we really need to convert explicitly?
+        attrs = {a: getattr(cls, a, None) for a in dir(cls)}
+        cli_args = {k: v for k, v in attrs.items() if isinstance(v, Argument)}
         cls.cli_args = cli_args
         for k, v in cli_args.items():
-            default = get_default(v)
-            setattr(cls, k, attrib(default=default))
+            setattr(cls, k, attrib(default=v.default))
 
     @classmethod
     def formatters(cls):
-        """Return all formatters in the class.
+        """Return all output formatters of the class.
 
         Return a dict of all methods with an _output_format attribute.
         """
@@ -152,6 +209,7 @@ class Feature(FeatureHelpersMixin, ABC):
 
     @classmethod
     def feature_map(cls):
+        """Create an ordered mapping of all feature names and their classes."""
         return OrderedDict(
             sorted(
                 ((c.__name__.lower(), c) for c in cls.__subclasses__()),
@@ -160,12 +218,22 @@ class Feature(FeatureHelpersMixin, ABC):
         )
 
     def build_format(self):
+        """Call the configured formatter method.
+
+        This method is usually called inside run() to automatically evoke the
+        correct formatter according to the configuration.
+        """
         self.formatters()[self.format](self) # TODO make _formatters underscore
 
-    @abstractmethod
+    def prepare(self):
+        """This method is called before run() or summarize()."""
+        pass
+
     def summarize(self):
+        """Summarize the results of executing the feature."""
         pass
 
     @abstractmethod
     def run(self):
+        """Run the feature."""
         pass

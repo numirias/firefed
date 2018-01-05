@@ -7,6 +7,7 @@ from firefed.output import out
 
 @attrs
 class Forms(Feature):
+    """List form input history (search terms, address fields, etc.)."""
 
     def prepare(self):
         self.entries = self.load_sqlite(

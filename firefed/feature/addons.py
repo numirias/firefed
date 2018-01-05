@@ -74,6 +74,7 @@ class Addon:
 
 @attrs
 class Addons(Feature):
+    """Extract installed addons/extensions."""
 
     addon_id = arg('-i', '--id', help='select specific addon by id')
     firefox_version = arg('-V', '--firefox-version',
