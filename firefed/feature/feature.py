@@ -152,7 +152,7 @@ class Feature(FeatureHelpersMixin, ABC):
                 help='output format',
                 default=default_format,
             )
-        if getattr(cls, 'summarize') is not getattr(Feature, 'summarize'):
+        if cls.summarizable():
             cls.summary = arg(
                 '-s', '--summary',
                 action='store_true',
@@ -216,6 +216,11 @@ class Feature(FeatureHelpersMixin, ABC):
                 key=(lambda x: x[0])
             )
         )
+
+    @classmethod
+    def summarizable(cls):
+        """Return whether the feature has overridden the summary method."""
+        return getattr(cls, 'summarize') is not getattr(Feature, 'summarize')
 
     def build_format(self):
         """Call the configured formatter method.

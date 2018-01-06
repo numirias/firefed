@@ -135,6 +135,15 @@ class TestFeature:
         assert SomeFeature.description() == 'A description.'
         assert SomeFeature2.description() == '(no description)'
 
+    def test_has_summary(self, MockFeature):
+        class F1(MockFeature):
+            pass
+        class F2(MockFeature):
+            def summarize(self):
+                pass
+        assert not F1.summarizable()
+        assert F2.summarizable()
+
 
 class TestFeatureHelpers:
 

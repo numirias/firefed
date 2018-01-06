@@ -5,14 +5,12 @@ from firefed.feature import Feature
 
 @attrs
 class Summary(Feature):
-
-    """Create report summary."""
+    """Summarize results of all features (that can be summarized)."""
 
     def run(self):
         features = Feature.__subclasses__()
         features.remove(Summary)
         for Feature_ in features:
-            # TODO Refactor
-            if getattr(Feature_, 'summarize') is getattr(Feature, 'summarize'):
+            if not Feature_.summarizable():
                 continue
             Feature_(self.session, summary=True)()

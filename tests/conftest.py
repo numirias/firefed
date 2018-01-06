@@ -248,6 +248,4 @@ def MockFeature():
     class MockFeature(Feature):
         def run(self):
             pass
-        def summarize(self):
-            pass
     return MockFeature
