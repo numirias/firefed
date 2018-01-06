@@ -10,6 +10,7 @@ from tabulate import tabulate
 from firefed.feature import Feature, arg, formatter
 from firefed.output import bad, fatal, good, okay, out
 
+
 # See constants defined in [1]
 SIGNED_STATES = {
     -2: 'broken',
@@ -21,6 +22,7 @@ SIGNED_STATES = {
     4: 'privileged'
 }
 UPDATE_CHECK_URL = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}' # noqa
+
 
 @attrs
 class Addon:
@@ -71,6 +73,7 @@ class Addon:
             return root.find('./RDF:Description/em:version', ns).text
         except AttributeError:
             return None
+
 
 @attrs
 class Addons(Feature):

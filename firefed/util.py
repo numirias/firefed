@@ -11,6 +11,7 @@ class ProfileNotFoundError(Exception):
     def __init__(self, name):
         super().__init__('Profile "%s" not found.' % name)
 
+
 def profile_dir(name):
     """Return path to FF profile for a given profile name or path."""
     if name:
@@ -34,9 +35,11 @@ def profile_dir(name):
         return mozilla_dir / profile_path
     return profile_path
 
+
 def moz_datetime(ts):
     """Convert Mozilla timestamp to datetime."""
     return datetime.fromtimestamp(moz_to_unix_timestamp(ts))
+
 
 def moz_to_unix_timestamp(ts):
     """Convert Mozilla timestamp to Unix timestamp."""
@@ -45,11 +48,13 @@ def moz_to_unix_timestamp(ts):
     except TypeError:
         return 0
 
+
 def profile_dir_type(dirname):
     try:
         return profile_dir(dirname)
     except ProfileNotFoundError as e:
         raise argparse.ArgumentTypeError(e)
+
 
 def make_parser():
     from firefed.feature import Feature
@@ -87,6 +92,7 @@ def make_parser():
             kwargs['dest'] = attrib_name
             feature_parser.add_argument(*arg.args, **kwargs)
     return parser
+
 
 def parse_args():
     parser = make_parser()

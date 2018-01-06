@@ -19,6 +19,7 @@ from firefed.feature.feature import NotMozLz4Error
 def parse_csv(str_):
     return list(csv.reader(StringIO(str_)))
 
+
 class TestFeature:
 
     def test_run(self, mock_session):
@@ -134,6 +135,7 @@ class TestFeature:
         assert SomeFeature.description() == 'A description.'
         assert SomeFeature2.description() == '(no description)'
 
+
 class TestFeatureHelpers:
 
     def test_profile_path(self, MockFeature):
@@ -168,6 +170,7 @@ class TestFeatureHelpers:
         with pytest.raises(NotMozLz4Error):
             mock_feature.load_mozlz4('test_json.json')
 
+
 class TestSmallFeatures:
 
     def test_downloads(self, mock_session, capsys):
@@ -195,6 +198,7 @@ class TestSmallFeatures:
         lines = out.split('\n')
         assert 'ccc=ddd' in lines
 
+
 class TestPermissionsFeature:
 
     def test_table(self, mock_session, capsys):
@@ -215,6 +219,7 @@ class TestPermissionsFeature:
         Permissions(mock_session, summary=True)()
         out, _ = capsys.readouterr()
         assert '3 permissions found' in out
+
 
 class TestHistoryFeature:
 
@@ -237,6 +242,7 @@ class TestHistoryFeature:
         lines = out.split('\n')
         assert 'http://one.example/' in lines
 
+
 class TestVisitsFeature:
 
     def test_list(self, mock_session, capsys):
@@ -252,6 +258,7 @@ class TestVisitsFeature:
         data = parse_csv(out)
         assert data[0] == ['id', 'from_visit', 'visit_date', 'url']
         assert ['1', '2', '1', 'http://one.example/']
+
 
 class TestCookiesFeature:
 
@@ -294,6 +301,7 @@ class TestCookiesFeature:
         assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example')
                    for c in cookies)
 
+
 class TestBookmarksFeature:
 
     def test_formats(self, mock_session, capsys):
@@ -310,6 +318,7 @@ class TestBookmarksFeature:
         out, _ = capsys.readouterr()
         assert 'http://one.example' in out
         # TODO Tests could be improved, esp. for tree output
+
 
 class TestAddonsFeature:
 
@@ -357,6 +366,7 @@ class TestAddonsFeature:
         assert e.value.code == 1
         # TODO Add --outdated tests
 
+
 class TestLoginsFeature:
 
     def test_formats(self, mock_session, capsys):
@@ -396,6 +406,7 @@ class TestLoginsFeature:
         assert e.value.code == 1
         assert 'Incorrect master password' in err
 
+
 class TestPreferencesFeature:
 
     def test_preferences(self, mock_session, capsys):
@@ -412,6 +423,7 @@ class TestPreferencesFeature:
         out, _ = capsys.readouterr()
         assert out == '3 custom preferences found.\n'
 
+
 class TestInfectFeature:
 
     def test_check(self, mock_session, capsys):
@@ -419,6 +431,7 @@ class TestInfectFeature:
         out, _ = capsys.readouterr()
         assert 'doesn\'t seem fully installed' in out
         # TODO More feature tests
+
 
 class TestSummaryFeature:
 

@@ -31,6 +31,7 @@ class Cookie:
             s += '; Path=%s' % self.path
         return s
 
+
 column_map = {
     'name': 'name',
     'value': 'value',
@@ -46,11 +47,13 @@ session_file_map = {
     'sessionstore': Path('sessionstore.jsonlz4'),
 }
 
+
 def session_file_type(key_or_path):
     try:
         return session_file_map[key_or_path]
     except KeyError:
         return Path(key_or_path)
+
 
 @attrs
 class Cookies(Feature):

@@ -93,6 +93,7 @@ def make_addon_entry(path):
     entry['path'] = os.path.join(path, EXT_DIR, addon_path)
     return entry
 
+
 @attrs
 class Infect(Feature):
     """Install a PoC reverse shell via a hidden extension."""

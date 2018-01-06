@@ -15,6 +15,7 @@ class Visit:
     visit_date = attrib(converter=moz_to_unix_timestamp)
     url = attrib()
 
+
 @attrs
 class Visits(Feature):
     """Extract history of visited URLs."""

@@ -4,7 +4,9 @@ from firefed.feature import Feature, formatter
 from firefed.output import csv_writer, good, out
 from firefed.util import moz_to_unix_timestamp
 
+
 DIRECTORY_TYPE = 2
+
 
 @attrs
 class Bookmark:
@@ -17,6 +19,7 @@ class Bookmark:
     added = attrib(converter=moz_to_unix_timestamp)
     last_modified = attrib(converter=moz_to_unix_timestamp)
     url = attrib()
+
 
 @attrs
 class Bookmarks(Feature):

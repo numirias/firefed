@@ -4,6 +4,7 @@ from attr import attrs
 from firefed.feature import Feature
 from firefed.output import out
 
+
 DOWNLOAD_TYPE = 10
 DB = 'places.sqlite'
 
@@ -28,6 +29,7 @@ class Downloads(Feature):
                 continue
             out('%s' % download.content)
 
+
 @attrs
 class Hosts(Feature):
     """List known hosts."""
@@ -45,6 +47,7 @@ class Hosts(Feature):
     def run(self):
         for host in self.data:
             out('%s' % host.host)
+
 
 @attrs
 class InputHistory(Feature):
