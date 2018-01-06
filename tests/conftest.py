@@ -11,6 +11,7 @@ from firefed import Session
 from firefed.feature import Feature
 from firefed.util import make_parser
 
+
 # TODO: Refactor make_*_sqlite
 
 def make_test_sqlite(profile_dir):

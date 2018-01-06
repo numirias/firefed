@@ -78,9 +78,13 @@ class FeatureHelpersMixin:
             for k, v in column_map.items():
                 columns[columns.index(v)] = k
             query = 'SELECT %s FROM %s' % (','.join(columns), table)
-        res = cursor.execute(query).fetchall() # TODO Use generator
+        cursor.execute(query)
+        while True:
+            item = cursor.fetchone()
+            if item is None:
+                break
+            yield item
         con.close()
-        return res
 
     def load_json(self, path):
         """Load a JSON file from the user profile."""
@@ -105,13 +109,16 @@ class FeatureHelpersMixin:
 
         The items need to be attrs-decorated.
         """
-        cls = items[0].__class__
+        items = iter(items)
+        first = next(items)
+        cls = first.__class__
         if stream is None:
             stream = sys.stdout
         fields = [f.name for f in attr.fields(cls)]
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
-        writer.writerows([attr.asdict(x) for x in items])
+        writer.writerow(attr.asdict(first))
+        writer.writerows((attr.asdict(x) for x in items))
 
     def profile_path(self, path):
         """Return path from current profile."""

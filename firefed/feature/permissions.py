@@ -25,7 +25,7 @@ class Permissions(Feature):
         )
 
     def summarize(self):
-        out('%d permissions found.' % len(self.perms))
+        out('%d permissions found.' % len(list(self.perms)))
 
     def run(self):
         self.build_format()

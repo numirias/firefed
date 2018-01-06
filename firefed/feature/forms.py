@@ -17,7 +17,7 @@ class Forms(Feature):
         )
 
     def summarize(self):
-        out('%d form entries found.' % len(self.entries))
+        out('%d form entries found.' % len(list(self.entries)))
 
     def run(self):
         for entry in self.entries:

@@ -39,18 +39,18 @@ class Bookmarks(Feature):
             },
         )
         # Remove pseudo-bookmarks from list
-        bmarks = [b for b in bmarks if not str(b.url).startswith('place:')]
+        bmarks = (b for b in bmarks if not str(b.url).startswith('place:'))
         self.bmarks = bmarks
 
     def summarize(self):
-        out('%d bookmarks found.' % len(self.bmarks))
+        out('%d bookmarks found.' % len(list(self.bmarks)))
 
     def run(self):
         self.build_format()
 
     @formatter('tree', default=True)
     def tree(self):
-        bmarks = self.bmarks
+        bmarks = list(self.bmarks)
         bmark_map = {b.id: b for b in bmarks}
         def walk(node, depth=0):
             if node.type == DIRECTORY_TYPE:

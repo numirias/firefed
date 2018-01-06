@@ -98,7 +98,7 @@ class Cookies(Feature):
         self.build_format()
 
     def summarize(self):
-        out('%d cookies found.' % len(self.cookies))
+        out('%d cookies found.' % len(list(self.cookies)))
 
     @formatter('list', default=True)
     def format_list(self):

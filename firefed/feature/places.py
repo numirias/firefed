@@ -21,7 +21,7 @@ class Downloads(Feature):
         )
 
     def summarize(self):
-        out('%d downloads found.' % len(self.data))
+        out('%d downloads found.' % len(list(self.data)))
 
     def run(self):
         for download in self.data:
@@ -42,7 +42,7 @@ class Hosts(Feature):
         )
 
     def summarize(self):
-        out('%d hosts found.' % len(self.data))
+        out('%d hosts found.' % len(list(self.data)))
 
     def run(self):
         for host in self.data:
@@ -61,7 +61,7 @@ class InputHistory(Feature):
         )
 
     def summarize(self):
-        out('%d input history entries found.' % len(self.data))
+        out('%d input history entries found.' % len(list(self.data)))
 
     def run(self):
         for entry in self.data:

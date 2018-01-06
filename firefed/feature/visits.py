@@ -21,13 +21,13 @@ class Visits(Feature):
     """Extract history of visited URLs."""
 
     def prepare(self):
-        visits = self.load_sqlite(
+        visits = list(self.load_sqlite(
             db='places.sqlite',
             query='''SELECT v.id, v.from_visit, v.visit_date, p.url FROM
             moz_historyvisits v JOIN moz_places p ON v.place_id = p.id
             ''',
             cls=Visit,
-        )
+        ))
         visits.sort(key=lambda x: x.visit_date)
         self.visits = visits
 

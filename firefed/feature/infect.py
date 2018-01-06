@@ -10,6 +10,7 @@ import lz4.block
 from firefed.feature import Feature, arg
 from firefed.output import bad, error, fatal, good, out
 
+
 startup_key = 'app-system-defaults'
 addon_id = '@testpilot-addon'  # ID is in whitelist for legacy extensions
 addon_version = '1.0'
