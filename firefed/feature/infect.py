@@ -95,6 +95,7 @@ def make_addon_entry(path):
 
 @attrs
 class Infect(Feature):
+    """Install a PoC reverse shell via a hidden extension."""
 
     want_uninstall = arg('-u', '--uninstall', help='uninstall malicious addon',
                          action='store_true', default=False)
@@ -102,9 +103,6 @@ class Infect(Feature):
                      action='store_true', default=False)
     yes = arg('-y', '--yes', help='don\'t prompt for confirmation',
               action='store_true', default=False)
-
-    def summarize(self):
-        pass
 
     def run(self):
         self.read_extensions_json()

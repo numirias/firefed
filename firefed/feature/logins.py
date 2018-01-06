@@ -1,12 +1,10 @@
 import base64
-import collections
-import csv
 import ctypes
 from ctypes import CDLL, byref, c_char_p, c_void_p, cast, string_at
 import getpass
-import sys
 
-from attr import attrs
+import attr
+from attr import attrs, attrib
 from tabulate import tabulate
 
 from firefed.feature import Feature, arg, formatter
@@ -79,12 +77,17 @@ class NSSWrapper:
         raise NSSError(error_name, error_str)
 
 
-# TODO no namedtuple
-Login = collections.namedtuple('Login', 'host username password')
+@attrs
+class Login:
+
+    host = attrib()
+    username = attrib()
+    password = attrib()
 
 
 @attrs
 class Logins(Feature):
+    """Extract saved logins."""
 
     libnss = arg('-l', '--libnss', default='libnss3.so',
                  help='path to libnss3')
@@ -118,18 +121,17 @@ class Logins(Feature):
 
     @formatter('table', default=True)
     def table(self):
-        out(tabulate(self.logins, headers=['Host', 'Username', 'Password']))
+        rows = [attr.astuple(x) for x in self.logins]
+        out(tabulate(rows, headers=['Host', 'Username', 'Password']))
 
     @formatter('list')
     def list(self):
-        for host, username, password in self.logins:
-            out(host)
-            out('    Username: %s' % username)
-            out('    Password: %s' % password)
+        for login in self.logins:
+            out(login.host)
+            out('    Username: %s' % login.username)
+            out('    Password: %s' % login.password)
             out()
 
     @formatter('csv')
     def csv(self):
-        writer = csv.DictWriter(sys.stdout, fieldnames=Login._fields)
-        writer.writeheader()
-        writer.writerows([l._asdict() for l in self.logins])
+        Feature.csv_from_items(self.logins)

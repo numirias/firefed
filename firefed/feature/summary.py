@@ -12,6 +12,7 @@ class Summary(Feature):
         features = Feature.__subclasses__()
         features.remove(Summary)
         for Feature_ in features:
-            if Feature_.summary:
+            # TODO Refactor
+            if getattr(Feature_, 'summarize') is getattr(Feature, 'summarize'):
                 continue
             Feature_(self.session, summary=True)()
