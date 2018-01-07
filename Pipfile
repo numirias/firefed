@@ -7,7 +7,6 @@ name = "pypi"
 
 [packages]
 
-tabulate = "*"
 colorama = "*"
 "lz4" = "*"
 requests = "*"

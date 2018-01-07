@@ -1,9 +1,9 @@
 import attr
 from attr import attrib, attrs
-from tabulate import tabulate
 
 from firefed.feature import Feature, formatter
 from firefed.output import out
+from firefed.util import tabulate
 
 
 @attrs

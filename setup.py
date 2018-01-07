@@ -17,5 +17,5 @@ setup(
     license=about['__license__'],
     keywords=about['__keywords__'],
     packages=['firefed'],
-    install_requires=['tabulate', 'colorama'],
+    install_requires=['colorama'],
 )

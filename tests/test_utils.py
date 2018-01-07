@@ -5,7 +5,8 @@ import os
 import pytest
 
 from firefed.util import (ProfileNotFoundError, make_parser, moz_datetime,
-                          moz_to_unix_timestamp, profile_dir, profile_dir_type)
+                          moz_to_unix_timestamp, profile_dir, profile_dir_type,
+                          tabulate)
 
 
 class TestUtils:
@@ -39,6 +40,20 @@ class TestUtils:
         assert ts == 1
         dt = moz_datetime(1000000)
         assert dt == datetime.fromtimestamp(1)
+
+    def test_tabulate(self, capsys):
+        rows = [
+            ('r1c1', 'r1c2_'),
+            ('r2c1__', 'r2c2'),
+        ]
+        headers = ['c1', 'c2']
+        tabulate(rows, headers)
+        out, _ = capsys.readouterr()
+        assert out == (
+            'c1      c2   \n'
+            '------  -----\n'
+            'r1c1    r1c2_\n'
+            'r2c1__  r2c2 \n')
 
 
 # TODO write proper tests for make_parser (argument names, etc.)

@@ -1,7 +1,11 @@
 import argparse
 from configparser import ConfigParser
 from datetime import datetime
+from itertools import chain
 from pathlib import Path
+import re
+
+from attr import attrib, attrs
 
 import firefed.__version__ as version
 
@@ -103,3 +107,41 @@ def make_parser():
 def parse_args():
     parser = make_parser()
     return vars(parser.parse_args())
+
+
+@attrs
+class Tabulate:
+
+    rows = attrib(converter=list)
+    headers = attrib()
+    maximums = attrib(init=False)
+
+    def __attrs_post_init__(self):
+        maxs = [0] * len(self.rows[0])
+        for row in chain([self.headers], self.rows):
+            for i, column in enumerate(row):
+                maxs[i] = max(maxs[i], len(self.strip_invisible(column)))
+        self.maximums = maxs
+
+    def __call__(self):
+        self.print_row(self.headers)
+        self.print_row([''] * len(self.maximums), ch='-')
+        for row in self.rows:
+            self.print_row(row)
+
+    def pad(self, s, num, ch):
+        missing = num - len(self.strip_invisible(s))
+        return s + missing * ch
+
+    def print_row(self, row, ch=' '):
+        print('  '.join([self.pad(c, self.maximums[i], ch) for i, c in
+                         enumerate(row)]))
+
+    @staticmethod
+    def strip_invisible(s):
+        invisibles = re.compile(r'\x1b\[\d*m')
+        return re.sub(invisibles, '', s)
+
+
+def tabulate(*args, **kwargs):
+    Tabulate(*args, **kwargs)()

@@ -5,10 +5,10 @@ import getpass
 
 import attr
 from attr import attrib, attrs
-from tabulate import tabulate
 
 from firefed.feature import Feature, arg, formatter
 from firefed.output import fatal, out
+from firefed.util import tabulate
 
 
 class SECItem(ctypes.Structure):

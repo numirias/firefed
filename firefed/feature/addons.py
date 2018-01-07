@@ -5,10 +5,10 @@ from xml.etree import ElementTree
 
 from attr import attrib, attrs
 import requests
-from tabulate import tabulate
 
 from firefed.feature import Feature, arg, formatter
 from firefed.output import bad, fatal, good, okay, out
+from firefed.util import tabulate
 
 
 # See constants defined in [1]
