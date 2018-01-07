@@ -14,36 +14,48 @@ import lz4.block
 from firefed.output import info
 
 
-class Argument:
-    """Wrapper for an attribute that can be given as a command line argument.
+def arg(*args, **kwargs):
+    """Return an attrib() that can be fed as a command-line argument.
 
-    This class proxies argparse's add_argument() and takes the same arguments.
-    Its purpose is to specify a feature attribute that can also be set as a
-    command-line argument.
+    This function is a wrapper for an attr.attrib to create a corresponding
+    command line argument for it. Use it with the same arguments as argparse's
+    add_argument().
+
+    Example:
+
+        @attrs
+        class MyFeature(Feature):
+            my_number = arg('-n', '--number' default=3)
+
+            def run(self):
+                print('Your number:', self.my_number)
+
+    Now you could run it like `firefed myfeature --number 5`.
     """
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-    @property
-    def default(self):
-        """Return the argument default value.
-
-        To determine the value, the argument is passed through a mocked-up
-        argument parser. This way, we get defaults even if the feature is
-        called directly and not through the CLI.
-        """
-        parser = argparse.ArgumentParser()
-        parser.add_argument(*self.args, **self.kwargs)
-        args = vars(parser.parse_args([]))
-        _, default = args.popitem()
-        return default
+    metadata = {'arg_params': (args, kwargs)}
+    return attrib(default=arg_default(*args, **kwargs), metadata=metadata)
 
 
-arg = Argument
+def arg_default(*args, **kwargs):
+    """Return default argument value as given by argparse's add_argument().
+
+    The argument is passed through a mocked-up argument parser. This way, we
+    get default parameters even if the feature is called directly and not
+    through the CLI.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(*args, **kwargs)
+    args = vars(parser.parse_args([]))
+    _, default = args.popitem()
+    return default
 
 
 def formatter(name, default=False):
+    """Decorate a Feature method to register it as an output formatter.
+
+    All formatters are picked up by the argument parser so that they can be
+    listed and selected on the CLI via the -f, --format argument.
+    """
     def decorator(func):
         func._output_format = dict(name=name, default=default)
         return func
@@ -51,10 +63,12 @@ def formatter(name, default=False):
 
 
 class NotMozLz4Error(Exception):
+    """Thrown when an LZ4 file doesn't use Mozilla's proprietary prefix."""
     pass
 
 
 class FeatureHelpersMixin:
+    """Helper methods to be used by features which simplify common tasks."""
 
     def load_sqlite(self, db, query=None, table=None, cls=None,
                     column_map=None):
@@ -64,12 +78,14 @@ class FeatureHelpersMixin:
         db_path = self.profile_path(db)
         if not db_path.exists():
             raise FileNotFoundError()
+
         def obj_factory(cursor, row):
             dict_ = {}
             for idx, col in enumerate(cursor.description):
                 new_name = column_map.get(col[0], col[0])
                 dict_[new_name] = row[idx]
             return cls(**dict_)
+
         con = sqlite3.connect(str(db_path))
         con.row_factory = obj_factory
         cursor = con.cursor()
@@ -136,7 +152,7 @@ class Feature(FeatureHelpersMixin, ABC):
     class level via attrib(), not inside an __init__ function. Attributes that
     should be settable as command-line arguments, should use arg().
     """
-    cli_args = None
+    format = None
     summary = None
     session = attrib()
 
@@ -150,11 +166,10 @@ class Feature(FeatureHelpersMixin, ABC):
         formatters = cls.formatters()
         if formatters:
             choices = formatters.keys()
-            default_format = next((name for name, m in formatters.items() if
-                                   m._output_format['default']), None)
+            default_format = next((name for name, m in formatters.items()
+                                   if m._output_format['default']), None)
             cls.format = arg(
-                '-f',
-                '--format',
+                '-f', '--format',
                 choices=choices,
                 help='output format',
                 default=default_format,
@@ -165,7 +180,6 @@ class Feature(FeatureHelpersMixin, ABC):
                 action='store_true',
                 help='summarize results',
             )
-        cls._convert_arg_attribues()
 
     def __call__(self):
         """Execute the feature.
@@ -193,17 +207,16 @@ class Feature(FeatureHelpersMixin, ABC):
             return '(no description)'
 
     @classmethod
-    def _convert_arg_attribues(cls):
-        """Convert all command line arguments to proper attributes.
-
-        Convert all arg() attributes to attrib() and register them as CLI args.
-        """
-        # TODO Do we really need to convert explicitly?
-        attrs = {a: getattr(cls, a, None) for a in dir(cls)}
-        cli_args = {k: v for k, v in attrs.items() if isinstance(v, Argument)}
-        cls.cli_args = cli_args
-        for k, v in cli_args.items():
-            setattr(cls, k, attrib(default=v.default))
+    def cli_args(cls):
+        """Generate argument tuples to be used on the CLI."""
+        for field in attr.fields(cls):
+            try:
+                args, kwargs = field.metadata['arg_params']
+            except KeyError:
+                continue
+            kwargs = kwargs.copy()
+            kwargs['dest'] = field.name
+            yield (args, kwargs)
 
     @classmethod
     def formatters(cls):
@@ -217,12 +230,9 @@ class Feature(FeatureHelpersMixin, ABC):
     @classmethod
     def feature_map(cls):
         """Create an ordered mapping of all feature names and their classes."""
-        return OrderedDict(
-            sorted(
-                ((c.__name__.lower(), c) for c in cls.__subclasses__()),
-                key=(lambda x: x[0])
-            )
-        )
+        features = cls.__subclasses__()
+        names_and_features = ((f.__name__.lower(), f) for f in features)
+        return OrderedDict(sorted(names_and_features, key=(lambda x: x[0])))
 
     @classmethod
     def summarizable(cls):
@@ -232,10 +242,10 @@ class Feature(FeatureHelpersMixin, ABC):
     def build_format(self):
         """Call the configured formatter method.
 
-        This method is usually called inside run() to automatically evoke the
-        correct formatter according to the configuration.
+        This method is usually called by a feature inside run() to evoke the
+        correct formatter according to the --format argument.
         """
-        self.formatters()[self.format](self) # TODO make _formatters underscore
+        self.formatters()[self.format](self)
 
     def prepare(self):
         """This method is called before run() or summarize()."""

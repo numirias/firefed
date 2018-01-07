@@ -87,10 +87,8 @@ def make_parser():
     for name, feature in Feature.feature_map().items():
         feature_parser = subparsers.add_parser(name,
                                                help=feature.description())
-        for attrib_name, arg in feature.cli_args.items():
-            kwargs = arg.kwargs
-            kwargs['dest'] = attrib_name
-            feature_parser.add_argument(*arg.args, **kwargs)
+        for args, kwargs in feature.cli_args():
+            feature_parser.add_argument(*args, **kwargs)
     return parser
 
 
