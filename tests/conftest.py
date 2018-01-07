@@ -197,6 +197,12 @@ def make_logins_json(profile_dir):
     with open(path, 'w') as f:
         f.write(json.dumps(data))
 
+def make_times_json(profile_dir):
+    path = Path(profile_dir) / 'times.json'
+    data = {"created": 1000}
+    with open(path, 'w') as f:
+        f.write(json.dumps(data))
+
 def make_prefs_js(profile_dir):
     path = Path(profile_dir) / 'prefs.js'
     data = '''
@@ -237,6 +243,7 @@ def mock_profile(mock_home):
     make_extensions_json(profile_path)
     make_logins_json(profile_path)
     make_prefs_js(profile_path)
+    make_times_json(profile_path)
     return profile_path
 
 @fixture(scope='module')

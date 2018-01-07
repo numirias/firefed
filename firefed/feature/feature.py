@@ -188,7 +188,7 @@ class Feature(FeatureHelpersMixin, ABC):
         depending on the configuration.
         """
         info('Profile: %s', self.session.profile)
-        info('Feature: %s\n', self.__class__.__name__)
+        info('Feature: %s', self.__class__.__name__)
         self.prepare()
         if self.summary:
             self.summarize()

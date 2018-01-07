@@ -470,6 +470,10 @@ class TestInfectFeature:
 
 class TestSummaryFeature:
 
+    def test_creation_date(self, mock_session):
+        summary = Summary(mock_session)
+        assert summary.creation_date() == datetime.fromtimestamp(1)
+
     def test_summary(self, mock_session, capsys):
         Summary(mock_session)()
         out, _ = capsys.readouterr()

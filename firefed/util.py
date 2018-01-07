@@ -77,6 +77,14 @@ def make_parser():
         dest='verbosity',
         default=0,
     )
+    parser.add_argument(
+        '-f',
+        '--force',
+        help='force treating target as a profile directory even if it doesn\'t'
+             ' look like one',
+        action='store_true',
+        default=False,
+    )
     subparsers = parser.add_subparsers(
         title='features',
         metavar='FEATURE',
