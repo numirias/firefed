@@ -158,7 +158,17 @@ def make_extensions_json(profile_dir):
                 'version': '0.1rc',
                 'active': False,
                 'visible': False,
-            }
+            },
+            {
+                'id': '3@three',
+                'defaultLocale': {
+                    'name': 'extension3',
+                },
+                'version': 'three',
+                'active': True,
+                'signedState': 0,
+                'visible': True,
+            },
         ],
     }
     with open(path, 'w') as f:

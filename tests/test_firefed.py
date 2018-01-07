@@ -368,7 +368,7 @@ class TestAddonsFeature:
     def test_summary(self, mock_session, capsys):
         Addons(mock_session, summary=True)()
         out, _ = capsys.readouterr()
-        assert out == '2 addons found. (1 enabled)\n'
+        assert out == '3 addons found. (2 enabled)\n'
 
     def test_addons_by_id(self, mock_session, capsys):
         Addons(mock_session, format='csv', addon_id='foo@bar')()
@@ -386,7 +386,20 @@ class TestAddonsFeature:
         with pytest.raises(SystemExit) as e:
             Addons(mock_session, format='list', check_outdated=True)()
         assert e.value.code == 1
-        # TODO Add --outdated tests
+
+    def test_addons_chcek_outdated(self, mock_session, monkeypatch):
+        class Response:
+            pass
+        def get_bad_response(*args, **kwargs):
+            res = Response()
+            res.text = 'badxml'
+            return res
+        monkeypatch.setattr('requests.get', get_bad_response)
+        with pytest.raises(SystemExit) as e:
+            Addons(mock_session, format='list', check_outdated=True,
+                   firefox_version='52')()
+        assert e.value.code == 1
+        # TODO Test good response
 
 
 class TestLoginsFeature:

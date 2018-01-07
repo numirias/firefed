@@ -24,6 +24,14 @@ SIGNED_STATES = {
 UPDATE_CHECK_URL = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}' # noqa
 
 
+class UpdateCheckError(Exception):
+
+    def __init__(self, msg):
+        super().__init__()
+        fatal(msg)
+        # TODO Make error handle-able
+
+
 @attrs
 class Addon:
     id = attrib()
@@ -33,11 +41,9 @@ class Addon:
     signed = attrib()
     visible = attrib()
 
-    @property
     def enabled_markup(self):
         return good('enabled') if self.enabled else bad('disabled')
 
-    @property
     def signed_markup(self):
         signed = self.signed
         if signed is None:
@@ -46,11 +52,9 @@ class Addon:
             return good(signed)
         return bad(signed)
 
-    @property
     def visible_tag_markup(self):
         return '' if self.visible else bad('[invisible]')
 
-    @property
     def visible_bool_markup(self):
         return good('true') if self.visible else bad('false')
 
@@ -65,9 +69,15 @@ class Addon:
     def get_latest_version(self, app_version):
         url = UPDATE_CHECK_URL.format(id=quote(self.id),
                                       app_version=quote(app_version))
+        # TODO Catch request error
         update_res = requests.get(url).text
-        ns = {k: v for _, (k, v) in ElementTree.iterparse(StringIO(update_res),
-                                                          events=['start-ns'])}
+        try:
+            ns = {k: v for _, (k, v) in
+                  ElementTree.iterparse(StringIO(update_res),
+                                        events=['start-ns'])}
+        except ElementTree.ParseError:
+            raise UpdateCheckError('Can\'t parse XML response to update check '
+                                   'request.')
         root = ElementTree.fromstring(update_res)
         try:
             return root.find('./RDF:Description/em:version', ns).text
@@ -85,7 +95,7 @@ class Addons(Feature):
                                'checked')
     check_outdated = arg('-o', '--outdated', action='store_true',
                          help='[experimental] check if addons are outdated '
-                              '(queries the addons.mozilla.org API)')
+                              '(queries the API at addons.mozilla.org)')
 
     def prepare(self):
         if self.check_outdated:
@@ -124,13 +134,14 @@ class Addons(Feature):
     @formatter('list')
     def build_list(self):
         for addon in self.addons:
-            out('%s (%s) %s %s' % (addon.name, addon.id, addon.enabled_markup,
-                                   addon.visible_tag_markup))
+            out('%s (%s) %s %s' % (addon.name, addon.id,
+                                   addon.enabled_markup(),
+                                   addon.visible_tag_markup()))
             version = addon.version
             if self.check_outdated:
                 version += ' ' + addon.outdated_markup(self.firefox_version)
             out('    Version:   %s' % version)
-            out('    Signature: %s\n' % addon.signed_markup)
+            out('    Signature: %s\n' % addon.signed_markup())
 
     @formatter('table', default=True)
     def build_table(self):
@@ -139,9 +150,9 @@ class Addons(Feature):
             addon.id,
             addon.name,
             addon.version,
-            addon.enabled_markup,
-            addon.signed_markup,
-            addon.visible_bool_markup,
+            addon.enabled_markup(),
+            addon.signed_markup(),
+            addon.visible_bool_markup(),
         ) for addon in self.addons]
         out(tabulate(rows, headers=headers))
 
