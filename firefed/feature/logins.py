@@ -4,7 +4,7 @@ from ctypes import CDLL, byref, c_char_p, c_void_p, cast, string_at
 import getpass
 
 import attr
-from attr import attrs, attrib
+from attr import attrib, attrs
 from tabulate import tabulate
 
 from firefed.feature import Feature, arg, formatter

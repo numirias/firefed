@@ -1,11 +1,12 @@
 import logging
 
 import attr
+from attr import attrs
 
 from firefed.output import logger
 
 
-@attr.s
+@attrs
 class Session:
 
     profile = attr.ib()

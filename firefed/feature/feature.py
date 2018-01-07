@@ -11,7 +11,7 @@ import attr
 from attr import attrib, attrs
 import lz4.block
 
-from firefed.output import info
+from firefed.output import fatal, info
 
 
 def arg(*args, **kwargs):
@@ -23,12 +23,11 @@ def arg(*args, **kwargs):
 
     Example:
 
-        @attrs
-        class MyFeature(Feature):
-            my_number = arg('-n', '--number' default=3)
-
-            def run(self):
-                print('Your number:', self.my_number)
+    >>> @attrs
+    ... class MyFeature(Feature):
+    ...     my_number = arg('-n', '--number' default=3)
+    ...     def run(self):
+    ...         print('Your number:', self.my_number)
 
     Now you could run it like `firefed myfeature --number 5`.
     """
@@ -75,9 +74,7 @@ class FeatureHelpersMixin:
         """Load data from sqlite db and return as list of specified objects."""
         if column_map is None:
             column_map = {}
-        db_path = self.profile_path(db)
-        if not db_path.exists():
-            raise FileNotFoundError()
+        db_path = self.profile_path(db, must_exist=True)
 
         def obj_factory(cursor, row):
             dict_ = {}
@@ -104,7 +101,7 @@ class FeatureHelpersMixin:
 
     def load_json(self, path):
         """Load a JSON file from the user profile."""
-        with open(self.profile_path(path)) as f:
+        with open(self.profile_path(path, must_exist=True)) as f:
             data = json.load(f)
         return data
 
@@ -113,7 +110,7 @@ class FeatureHelpersMixin:
 
         Mozilla LZ4 is regular LZ4 with a custom string prefix.
         """
-        with open(self.profile_path(path), 'rb') as f:
+        with open(self.profile_path(path, must_exist=True), 'rb') as f:
             if f.read(8) != b'mozLz40\0':
                 raise NotMozLz4Error('Not Mozilla LZ4 format.')
             data = lz4.block.decompress(f.read())
@@ -136,9 +133,12 @@ class FeatureHelpersMixin:
         writer.writerow(attr.asdict(first))
         writer.writerows((attr.asdict(x) for x in items))
 
-    def profile_path(self, path):
+    def profile_path(self, path, must_exist=False):
         """Return path from current profile."""
-        return self.session.profile / path
+        full_path = self.session.profile / path
+        if must_exist and not full_path.exists():
+            fatal('File "%s" does not exist.' % full_path)
+        return full_path
 
 
 @attrs
@@ -253,7 +253,7 @@ class Feature(FeatureHelpersMixin, ABC):
 
     def summarize(self):
         """Summarize the results of executing the feature."""
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def run(self):

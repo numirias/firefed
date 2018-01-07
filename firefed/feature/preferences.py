@@ -1,6 +1,6 @@
 import re
 
-from attr import attrs, attrib
+from attr import attrib, attrs
 import requests
 
 from firefed.feature import Feature, arg

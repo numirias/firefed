@@ -164,7 +164,7 @@ class TestFeatureHelpers:
         )
         assert Foo(c1='r1v1', c2='r1v2') in foos
 
-    def test_load_sqlite_map(self, mock_feature):
+    def test_load_sqlite_with_column_map(self, mock_feature):
         Foo = attr.make_class('Foo', ['obj_c1', 'c2'])
         foos = mock_feature.load_sqlite(
             'test_sqlite.sqlite',
@@ -173,6 +173,18 @@ class TestFeatureHelpers:
             column_map={'c1': 'obj_c1'},
         )
         assert Foo(obj_c1='r1v1', c2='r1v2') in foos
+
+    def test_load_sqlite_missing_file(self, mock_feature):
+        Foo = attr.make_class('Foo', ['c1', 'c2'])
+        with pytest.raises(SystemExit) as e:
+            list(mock_feature.load_sqlite(
+                'nonexistent.sqlite',
+                table='t1',
+                cls=Foo,
+            ))
+        assert e.value.code == 1
+        # TODO Catch custom exception here instead of SystemExit
+        # TODO Dedicated test for profile_path(..., must_exist=True)
 
     def test_load_mozlz4(self, mock_feature):
         assert mock_feature.load_mozlz4('test_mozlz4.lz4') == b'foo'
@@ -304,7 +316,8 @@ class TestCookiesFeature:
             Cookies(mock_session, session_file='nonexistent', format='list')()
         assert e.value.code == 1
         _, err = capsys.readouterr()
-        assert 'not found' in err
+        # TODO Instead of reading stderr, catch custom fatal error
+        assert 'not exist' in err
 
         cookies = Cookies(mock_session).load_ss_cookies('sessionstore.jsonlz4')
         assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example')
