@@ -144,6 +144,15 @@ class TestFeature:
         assert not F1.summarizable()
         assert F2.summarizable()
 
+    def test_all_csvs(self, mock_session, capsys):
+        """All features with a CSV formatter should be CSV-parseable."""
+        for Feature_ in Feature.feature_map().values():
+            if 'csv' in Feature_.formatters():
+                kwargs = {'password': 'master'} if Feature_ is Logins else {}
+                Feature_(mock_session, format='csv', **kwargs)()
+                out, _ = capsys.readouterr()
+                parse_csv(out)
+
 
 class TestFeatureHelpers:
 
