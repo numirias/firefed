@@ -1,12 +1,23 @@
+from datetime import datetime
+
 import attr
-from attr import attrs
+from attr import attrs, attrib
 
 from firefed.feature import Feature
 from firefed.output import out
+from firefed.util import moz_to_unix_timestamp
 
 
 DOWNLOAD_TYPE = 10
 DB = 'places.sqlite'
+
+
+@attrs
+class Download:
+
+    filename = attrib()
+    date = attrib(converter=moz_to_unix_timestamp)
+    anno_attribute_id = attrib()
 
 
 @attrs
@@ -17,7 +28,8 @@ class Downloads(Feature):
         self.data = self.load_sqlite(
             db=DB,
             table='moz_annos',
-            cls=attr.make_class('Download', ['anno_attribute_id', 'content']),
+            cls=Download,
+            column_map={'dateAdded': 'date', 'content': 'filename'}
         )
 
     def summarize(self):
@@ -27,7 +39,8 @@ class Downloads(Feature):
         for download in self.data:
             if download.anno_attribute_id != DOWNLOAD_TYPE:
                 continue
-            out('%s' % download.content)
+            out('%s %s' % (datetime.fromtimestamp(download.date),
+                           download.filename))
 
 
 @attrs

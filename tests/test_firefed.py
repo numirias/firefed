@@ -198,7 +198,7 @@ class TestSmallFeatures:
         Downloads(mock_session)()
         out, _ = capsys.readouterr()
         lines = out.split('\n')
-        assert 'file:///foo/bar' in lines
+        assert '1970-01-01 01:00:01 file:///foo/bar' in lines
         assert 'nodownload' not in lines
 
     def test_hosts(self, mock_session, capsys):

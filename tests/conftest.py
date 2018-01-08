@@ -58,10 +58,10 @@ def make_places_sqlite(profile_dir):
     INSERT INTO moz_places VALUES(2, 'http://two.example/', 'two', 200, 2000000);
     INSERT INTO moz_places VALUES(3, 'http://three.example/', 'three', 300, 3000000);
 
-    CREATE TABLE moz_annos (anno_attribute_id, content);
-    INSERT INTO moz_annos VALUES(10,'file:///foo/bar');
-    INSERT INTO moz_annos VALUES(12,'nodownload');
-    INSERT INTO moz_annos VALUES(10,'file:///baz');
+    CREATE TABLE moz_annos (anno_attribute_id, dateAdded, content);
+    INSERT INTO moz_annos VALUES(10, 1000000, 'file:///foo/bar');
+    INSERT INTO moz_annos VALUES(12, 2000000, 'nodownload');
+    INSERT INTO moz_annos VALUES(10, 3000000, 'file:///baz');
 
     CREATE TABLE moz_hosts (host);
     INSERT INTO moz_hosts VALUES('one.example');

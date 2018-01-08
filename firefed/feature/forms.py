@@ -7,7 +7,10 @@ from firefed.output import out
 
 @attrs
 class Forms(Feature):
-    """List form input history (search terms, address fields, etc.)."""
+    """List form input history (search terms, address fields, etc.).
+
+    Searches in the browser's searchbar have the key "searchar-history".
+    """
 
     def prepare(self):
         self.entries = self.load_sqlite(
