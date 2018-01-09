@@ -14,9 +14,9 @@ class TestOutput:
         assert 'foo' in err
 
     def test_logging(self, caplog, mock_profile):
-        # TODO Globals are evil
-        Session(profile=mock_profile, verbosity=0)
+        session = Session(profile=mock_profile, verbosity=0)
+        session.logger.info('foo')
         assert caplog.text == ''
-        Session(profile=mock_profile, verbosity=1)
-        output.info('foo')
+        session = Session(profile=mock_profile, verbosity=1)
+        session.logger.info('foo')
         assert 'foo' in caplog.text

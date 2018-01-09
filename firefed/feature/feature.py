@@ -11,7 +11,7 @@ import attr
 from attr import attrib, attrs
 import lz4.block
 
-from firefed.output import fatal, info
+from firefed.output import fatal
 
 
 def arg(*args, **kwargs):
@@ -190,8 +190,8 @@ class Feature(FeatureHelpersMixin, ABC):
         First, prepare() is called. Then either summarize() or run() is called
         depending on the configuration.
         """
-        info('Profile: %s', self.session.profile)
-        info('Feature: %s', self.__class__.__name__)
+        self.session.logger.info('Profile: %s', self.session.profile)
+        self.session.logger.info('Feature: %s', self.__class__.__name__)
         self.prepare()
         if self.summary:
             self.summarize()

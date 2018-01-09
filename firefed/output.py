@@ -1,11 +1,8 @@
 import csv
-import logging
 import sys
 
 import colorama
 from colorama import Fore, Style
-
-from firefed.__version__ import __title__
 
 
 def out(*args, **kwargs):
@@ -41,16 +38,4 @@ def csv_writer():
     return csv.writer(sys.stdout)
 
 
-def make_logger():
-    logger = logging.getLogger(__title__)
-    logger.setLevel(logging.ERROR)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    return logger
-
-
 colorama.init()
-logger = make_logger()
-info = logger.info

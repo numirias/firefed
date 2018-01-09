@@ -5,7 +5,7 @@ from firefed.output import fatal
 
 def main():
     args = util.parse_args()
-    session = Session(args.pop('profile'), args.pop('verbosity'))
+    session = Session(args.pop('profile'), verbosity=args.pop('verbosity'))
     ChosenFeature = Feature.feature_map()[args.pop('feature')]
     force = args.pop('force')
     feature = ChosenFeature(session, **args)
