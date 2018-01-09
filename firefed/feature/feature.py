@@ -116,6 +116,9 @@ class FeatureHelpersMixin:
             data = lz4.block.decompress(f.read())
         return data
 
+    def load_json_mozlz4(self, path):
+        return json.loads(self.load_mozlz4(path))
+
     @staticmethod
     def csv_from_items(items, stream=None):
         """Write a list of items to stream in CSV format.

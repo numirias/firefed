@@ -149,6 +149,9 @@ def make_extensions_json(profile_dir):
                 'active': True,
                 'signedState': 1,
                 'visible': True,
+                'location': 'app-profile',
+                'type': 'type1',
+                'path': '/foo/bar',
             },
             {
                 'id': 'bar@baz',
@@ -158,6 +161,9 @@ def make_extensions_json(profile_dir):
                 'version': '0.1rc',
                 'active': False,
                 'visible': False,
+                'location': 'app-profile',
+                'type': 'type2',
+                'path': '/bar/baz',
             },
             {
                 'id': '3@three',
@@ -168,6 +174,9 @@ def make_extensions_json(profile_dir):
                 'active': True,
                 'signedState': 0,
                 'visible': True,
+                'location': 'app-profile',
+                'type': 'type3',
+                'path': '/abc',
             },
         ],
     }

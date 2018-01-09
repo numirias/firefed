@@ -24,6 +24,10 @@ def okay(text):
     return Fore.YELLOW + text + Style.RESET_ALL
 
 
+def disabled(text):
+    return Fore.LIGHTBLACK_EX + text + Style.RESET_ALL
+
+
 def error(text):
     print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL, file=sys.stderr)
 

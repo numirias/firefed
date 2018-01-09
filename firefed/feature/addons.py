@@ -1,16 +1,15 @@
-from distutils.version import LooseVersion
-from io import StringIO
-from urllib.parse import quote
-from xml.etree import ElementTree
+from pathlib import Path
 
 from attr import attrib, attrs
-import requests
 
 from firefed.feature import Feature, arg, formatter
-from firefed.output import bad, fatal, good, okay, out
-from firefed.util import tabulate
+from firefed.output import bad, disabled, good, out
 
 
+EXTENSIONS_FILE = 'extensions.json'
+STARTUP_FILE = 'addonStartup.json.lz4'
+ADDONS_FILE = 'addons.json'
+DEFAULT_LOCATION = 'app-profile'
 # See constants defined in [1]
 SIGNED_STATES = {
     -2: 'broken',
@@ -21,15 +20,6 @@ SIGNED_STATES = {
     3: 'system',
     4: 'privileged'
 }
-UPDATE_CHECK_URL = 'https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=2&id={id}&appID=%7bec8030f7-c20a-464f-9b0e-13a3a9e97384%7d&appVersion={app_version}' # noqa
-
-
-class UpdateCheckError(Exception):
-
-    def __init__(self, msg):
-        super().__init__()
-        fatal(msg)
-        # TODO Make error handle-able
 
 
 @attrs
@@ -40,10 +30,15 @@ class Addon:
     enabled = attrib()
     signed = attrib()
     visible = attrib()
+    type = attrib()
+    path = attrib()
+    location = attrib()
 
+    @property
     def enabled_markup(self):
-        return good('enabled') if self.enabled else bad('disabled')
+        return '' if self.enabled else disabled('[disabled]')
 
+    @property
     def signed_markup(self):
         signed = self.signed
         if signed is None:
@@ -52,68 +47,32 @@ class Addon:
             return good(signed)
         return bad(signed)
 
-    def visible_tag_markup(self):
-        return '' if self.visible else bad('[invisible]')
-
-    def visible_bool_markup(self):
+    @property
+    def visible_markup(self):
         return good('true') if self.visible else bad('false')
-
-    def outdated_markup(self, app_version):
-        latest = self.get_latest_version(app_version)
-        if latest is None:
-            return okay('(no version found)')
-        if LooseVersion(latest) > LooseVersion(self.version):
-            return bad('(outdated, latest: %s)' % latest)
-        return good('(up-to-date)')
-
-    def get_latest_version(self, app_version):
-        url = UPDATE_CHECK_URL.format(id=quote(self.id),
-                                      app_version=quote(app_version))
-        # TODO Catch request error
-        update_res = requests.get(url).text
-        try:
-            ns = {k: v for _, (k, v) in
-                  ElementTree.iterparse(StringIO(update_res),
-                                        events=['start-ns'])}
-        except ElementTree.ParseError:
-            raise UpdateCheckError('Can\'t parse XML response to update check '
-                                   'request.')
-        root = ElementTree.fromstring(update_res)
-        try:
-            return root.find('./RDF:Description/em:version', ns).text
-        except AttributeError:
-            return None
 
 
 @attrs
 class Addons(Feature):
     """Extract installed addons/extensions."""
 
-    addon_id = arg('-i', '--id', help='select specific addon by id')
-    firefox_version = arg('-V', '--firefox-version',
-                          help='Firefox version for which updates should be '
-                               'checked')
-    check_outdated = arg('-o', '--outdated', action='store_true',
-                         help='[experimental] check if addons are outdated '
-                              '(queries the API at addons.mozilla.org)')
+    show_all = arg('-a', '--all', action='store_true',
+                   help='show all extensions (including system extensions)')
+    show_addons_json = arg('-A', '--show-addons-json', action='store_true',
+                           help='show entries from "%s"' % ADDONS_FILE)
+    show_startup_json = arg('-S', '--show-startup-json', action='store_true',
+                            help='show addon startup entries (from "%s")' %
+                            STARTUP_FILE)
 
     def prepare(self):
-        if self.check_outdated:
-            if self.format != 'list':
-                fatal('--outdated can only be used with list format (--format '
-                      'list).')
-            if self.firefox_version is None:
-                fatal('--outdated needs a version (--firefox-version) to '
-                      'check against.')
         addons = list(self.load_addons())
-        if self.addon_id:
-            addons = [a for a in addons if a.id == self.addon_id]
+        if not self.show_all:
+            addons = [a for a in addons if a.location == DEFAULT_LOCATION]
         self.addons = addons
 
     def load_addons(self):
-        # We prefer "extensions.json" over "addons.json"
-        addons_json = self.load_json('extensions.json').get('addons', [])
-        for addon in addons_json:
+        data = self.load_json(EXTENSIONS_FILE).get('addons', [])
+        for addon in data:
             yield Addon(
                 id=addon.get('id'),
                 name=addon.get('defaultLocale', {}).get('name'),
@@ -121,40 +80,61 @@ class Addons(Feature):
                 enabled=addon.get('active'),
                 signed=SIGNED_STATES.get(addon.get('signedState')),
                 visible=addon.get('visible'),
+                path=addon.get('path'),
+                type=addon.get('type'),
+                location=addon.get('location'),
             )
+
+    def dump_addons_json(self):
+        data = self.load_json(ADDONS_FILE).get('addons', [])
+        out('%d entries in "%s":\n' % (len(data), ADDONS_FILE))
+        for addon in data:
+            out('%s (%s)' % (addon.get('name'), addon.get('id')))
+
+    def dump_startup_json(self):
+        data = self.load_json_mozlz4(STARTUP_FILE)
+        num = sum(len(x.get('addons', {})) for x in data.values())
+        out('%d entries in "%s":\n' % (num, STARTUP_FILE))
+        for _, loc_data in data.items():
+            for addon in loc_data.get('addons', {}).values():
+                path = Path(loc_data['path']) / addon['path']
+                out('%s%s' % (path, ' (enabled)' if addon['enabled'] else ''))
 
     def summarize(self):
         out('%d addons found. (%d enabled)' %
             (len(self.addons), sum(a.enabled for a in self.addons)))
 
     def run(self):
-        self.addons.sort(key=lambda a: not a.enabled)
-        self.build_format()
+        if self.show_startup_json:
+            self.dump_startup_json()
+        elif self.show_addons_json:
+            self.dump_addons_json()
+        else:
+            self.addons.sort(key=lambda a: not a.enabled)
+            self.build_format()
 
-    @formatter('list')
+    @formatter('list', default=True)
     def build_list(self):
         for addon in self.addons:
-            out('%s (%s) %s %s' % (addon.name, addon.id,
-                                   addon.enabled_markup(),
-                                   addon.visible_tag_markup()))
+            out('%s (%s) %s' % (
+                addon.name,
+                addon.id,
+                addon.enabled_markup,
+            ))
             version = addon.version
-            if self.check_outdated:
-                version += ' ' + addon.outdated_markup(self.firefox_version)
-            out('    Version:   %s' % version)
-            out('    Signature: %s\n' % addon.signed_markup())
+            out('  Version: %s' % version)
+            out('  Type:    %s' % addon.type)
+            out('  Visible: %s' % addon.visible_markup)
+            out('  Sig:     %s' % addon.signed_markup)
+            out('  Path:    %s\n' % addon.path)
+            # TODO Create list factory
 
-    @formatter('table', default=True)
-    def build_table(self):
-        headers = ['ID', 'Name', 'Version', 'Status', 'Signature', 'Visible']
-        rows = [(
-            addon.id,
-            addon.name,
-            addon.version,
-            addon.enabled_markup(),
-            addon.signed_markup(),
-            addon.visible_bool_markup(),
-        ) for addon in self.addons]
-        out(tabulate(rows, headers=headers))
+    # TODO Re-add table?
+
+    @formatter('short')
+    def build_short(self):
+        for addon in self.addons:
+            out(addon.id, repr(addon.name))
 
     @formatter('csv')
     def csv(self):

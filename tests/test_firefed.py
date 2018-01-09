@@ -358,57 +358,20 @@ class TestAddonsFeature:
         out, _ = capsys.readouterr()
         data = parse_csv(out)
         assert data[0] == ['id', 'name', 'version', 'enabled', 'signed',
-                           'visible']
+                           'visible', 'type', 'path', 'location']
         assert ['foo@bar', 'fooextension', '1.2.3', 'True', 'preliminary',
-                'True'] in data
-        assert ['bar@baz', 'barextension', '0.1rc', 'False', '', 'False'] \
-            in data
-
+                'True', 'type1', '/foo/bar', 'app-profile'] in data
+        assert ['bar@baz', 'barextension', '0.1rc', 'False', '', 'False',
+                'type2', '/bar/baz', 'app-profile'] in data
         Addons(mock_session, format='list')()
         out, _ = capsys.readouterr()
         assert out.startswith('fooextension')
-        assert all(x in out for x in ['preliminary', 'enabled'])
-
-        Addons(mock_session, format='table')()
-        out, _ = capsys.readouterr()
-        assert 'fooextension' in out
-        assert 'barextension' in out
+        assert all(x in out for x in ['preliminary', 'disabled'])
 
     def test_summary(self, mock_session, capsys):
         Addons(mock_session, summary=True)()
         out, _ = capsys.readouterr()
         assert out == '3 addons found. (2 enabled)\n'
-
-    def test_addons_by_id(self, mock_session, capsys):
-        Addons(mock_session, format='csv', addon_id='foo@bar')()
-        out, _ = capsys.readouterr()
-        assert 'fooextension' in out
-        assert 'barextension' not in out
-
-    def test_addons_errors(self, mock_session):
-        # Can't check outdated without version
-        with pytest.raises(SystemExit) as e:
-            Addons(mock_session, format='table', check_outdated=True)()
-        assert e.value.code == 1
-
-        # Can't check outdated if not list format
-        with pytest.raises(SystemExit) as e:
-            Addons(mock_session, format='list', check_outdated=True)()
-        assert e.value.code == 1
-
-    def test_addons_chcek_outdated(self, mock_session, monkeypatch):
-        class Response:
-            pass
-        def get_bad_response(*args, **kwargs):
-            res = Response()
-            res.text = 'badxml'
-            return res
-        monkeypatch.setattr('requests.get', get_bad_response)
-        with pytest.raises(SystemExit) as e:
-            Addons(mock_session, format='list', check_outdated=True,
-                   firefox_version='52')()
-        assert e.value.code == 1
-        # TODO Test good response
 
 
 class TestLoginsFeature:
