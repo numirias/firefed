@@ -129,7 +129,7 @@ class Logins(Feature):
     @formatter('table', default=True)
     def table(self):
         rows = [attr.astuple(x) for x in self.logins]
-        out(tabulate(rows, headers=['Host', 'Username', 'Password']))
+        tabulate(rows, headers=['Host', 'Username', 'Password'])
 
     @formatter('list')
     def list(self):

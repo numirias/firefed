@@ -33,7 +33,7 @@ class Permissions(Feature):
     @formatter('table', default=True)
     def table(self):
         rows = [attr.astuple(p) for p in self.perms]
-        out(tabulate(rows, headers=('Host', 'Permission')))
+        tabulate(rows, headers=('Host', 'Permission'))
 
     @formatter('csv')
     def csv(self):
