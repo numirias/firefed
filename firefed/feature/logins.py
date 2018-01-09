@@ -92,7 +92,8 @@ class Logins(Feature):
     libnss = arg('-l', '--libnss', default='libnss3.so',
                  help='path to libnss3')
     password = arg('-p', '--master-password',
-                   help='profile\'s master password')
+                   help='profile\'s master password (If not set, an empty '
+                        'password is tried. If that fails, you\'re prompted.)')
 
     def prepare(self):
         self.nss = NSSWrapper(self.libnss, self.session.profile)
@@ -105,13 +106,19 @@ class Logins(Feature):
     def run(self):
         nss = self.nss
         if self.password is None:
-            self.password = getpass.getpass(prompt='Master password: ')
-            out()
+            try:
+                nss.check_password('')
+            except NSSError as e:
+                if e.name != 'SEC_ERROR_BAD_PASSWORD':
+                    fatal(e)
+                self.password = getpass.getpass(prompt='Master password: ')
+                out()
+            else:
+                self.password = ''
         try:
             nss.check_password(self.password)
         except NSSError as e:
-            if e.name == 'SEC_ERROR_BAD_PASSWORD':
-                fatal('Incorrect master password (%s)' % e)
+            fatal(e)
         self.logins = [Login(
             host=login['hostname'],
             username=nss.decrypt(login['encryptedUsername']),

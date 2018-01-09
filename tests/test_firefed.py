@@ -411,7 +411,7 @@ class TestLoginsFeature:
             Logins(mock_session, password='wrong', format='csv')()
         _, err = capsys.readouterr()
         assert e.value.code == 1
-        assert 'Incorrect master password' in err
+        assert 'SEC_ERROR_BAD_PASSWORD' in err
 
 
 class TestPreferencesFeature:
