@@ -5,7 +5,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/firefed.svg)](https://pypi.python.org/pypi/firefed)
 [![Python Versions](https://img.shields.io/pypi/pyversions/firefed.svg)](https://pypi.python.org/pypi/firefed)
 
-Firefed is a command-line tool to inspect Firefox profiles. It can extract saved passwords, examine preferences, addons, history and more. You may use it for forensic analysis, to audit your config for insecure settings or just to quickly extract some data without starting up the browser.
+Firefed is a command-line tool to inspect Firefox profiles. It can extract saved passwords, preferences, addons, history and more. You may use it for forensic analysis, to audit your config for insecure settings or just to quickly extract some data without starting up the browser.
 
 (Note that Firefed is currently under development.)
 
@@ -59,3 +59,9 @@ features:
     visits              Extract history of visited URLs.
 ```
 <!--help-end-->
+
+## Similar tools
+
+- [dumpzilla](https://github.com/Busindre/dumpzilla) (Extracts various information in a single step)
+
+- [firefox_decrypt](https://github.com/unode/firefox_decrypt) (Extracts passwords)
