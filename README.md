@@ -270,7 +270,7 @@ optional arguments:
 
 <!--features-end-->
 
-## Similar tools
+## Related tools
 
 - [dumpzilla](https://github.com/Busindre/dumpzilla) (Extracts various information in a single step)
 
