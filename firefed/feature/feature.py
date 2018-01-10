@@ -11,7 +11,7 @@ import attr
 from attr import attrib, attrs
 import lz4.block
 
-from firefed.output import fatal
+from firefed.util import fatal
 
 
 def arg(*args, **kwargs):
@@ -62,7 +62,7 @@ def formatter(name, default=False):
 
 
 class NotMozLz4Error(Exception):
-    """Thrown when an LZ4 file doesn't use Mozilla's proprietary prefix."""
+    """Raised when an LZ4 file doesn't use Mozilla's proprietary prefix."""
     pass
 
 

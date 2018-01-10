@@ -54,7 +54,7 @@ class Addon:
 
 @attrs
 class Addons(Feature):
-    """Extract installed addons/extensions."""
+    """List installed addons/extensions."""
 
     show_all = arg('-a', '--all', action='store_true',
                    help='show all extensions (including system extensions)')

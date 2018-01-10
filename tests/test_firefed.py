@@ -14,6 +14,7 @@ from firefed.feature import (Addons, Bookmarks, Cookies, Downloads, Feature,
                              arg, formatter)
 from firefed.feature.cookies import Cookie, session_file_type
 from firefed.feature.feature import NotMozLz4Error
+from firefed.util import FatalError
 
 
 def parse_csv(str_):
@@ -185,14 +186,13 @@ class TestFeatureHelpers:
 
     def test_load_sqlite_missing_file(self, mock_feature):
         Foo = attr.make_class('Foo', ['c1', 'c2'])
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(FatalError) as e:
             list(mock_feature.load_sqlite(
                 'nonexistent.sqlite',
                 table='t1',
                 cls=Foo,
             ))
-        assert e.value.code == 1
-        # TODO Catch custom exception here instead of SystemExit
+        assert 'does not exist' in str(e)
         # TODO Dedicated test for profile_path(..., must_exist=True)
 
     def test_load_mozlz4(self, mock_feature):
@@ -316,17 +316,14 @@ class TestCookiesFeature:
         data = parse_csv(out)
         assert ['k1', 'v1', 'one.example', '/', '1', '0'] in data
 
-    def test_sessionstore(self, mock_session, capsys):
+    def test_sessionstore(self, mock_session):
         file = session_file_type('sessionstore')
         assert file == session_file_type('sessionstore.jsonlz4')
         assert file != session_file_type('nonexistent')
 
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(FatalError) as e:
             Cookies(mock_session, session_file='nonexistent', format='list')()
-        assert e.value.code == 1
-        _, err = capsys.readouterr()
-        # TODO Instead of reading stderr, catch custom fatal error
-        assert 'not exist' in err
+        assert 'not exist' in str(e)
 
         cookies = Cookies(mock_session).load_ss_cookies('sessionstore.jsonlz4')
         assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example')
@@ -390,12 +387,10 @@ class TestLoginsFeature:
         data = parse_csv(out)
         assert ['http://one.example', 'foo', 'bar'] in data
 
-    def test_no_libnss(self, mock_session, capsys):
-        with pytest.raises(SystemExit) as e:
+    def test_no_libnss(self, mock_session):
+        with pytest.raises(FatalError) as e:
             Logins(mock_session, libnss='nonexistent', format='csv')()
-        _, err = capsys.readouterr()
-        assert e.value.code == 1
-        assert 'Can\'t open libnss' in err
+        assert 'Can\'t open libnss' in str(e)
 
     def test_pw_prompt(self, mock_session, capsys, monkeypatch):
         import getpass # noqa
@@ -407,11 +402,9 @@ class TestLoginsFeature:
         assert 'foo' in out
 
     def test_wrong_pw(self, mock_session, capsys):
-        with pytest.raises(SystemExit) as e:
+        with pytest.raises(FatalError) as e:
             Logins(mock_session, password='wrong', format='csv')()
-        _, err = capsys.readouterr()
-        assert e.value.code == 1
-        assert 'SEC_ERROR_BAD_PASSWORD' in err
+        assert 'SEC_ERROR_BAD_PASSWORD' in str(e)
 
 
 class TestPreferencesFeature:

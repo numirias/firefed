@@ -8,7 +8,8 @@ from attr import attrs
 import lz4.block
 
 from firefed.feature import Feature, arg
-from firefed.output import bad, error, fatal, good, out
+from firefed.output import bad, error, good, out
+from firefed.util import fatal
 
 
 startup_key = 'app-system-defaults'

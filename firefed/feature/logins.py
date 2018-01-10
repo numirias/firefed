@@ -7,8 +7,8 @@ import attr
 from attr import attrib, attrs
 
 from firefed.feature import Feature, arg, formatter
-from firefed.output import fatal, out
-from firefed.util import tabulate
+from firefed.output import out
+from firefed.util import tabulate, fatal
 
 
 class SECItem(ctypes.Structure):

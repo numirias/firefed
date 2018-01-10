@@ -16,6 +16,15 @@ class ProfileNotFoundError(Exception):
         super().__init__('Profile "%s" not found.' % name)
 
 
+class FatalError(Exception):
+    """Raised when an unrecoverable error in a feature occurs."""
+    pass
+
+
+def fatal(text):
+    raise FatalError(text)
+
+
 def profile_dir(name):
     """Return path to FF profile for a given profile name or path."""
     if name:

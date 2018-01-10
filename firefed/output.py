@@ -29,11 +29,6 @@ def error(text):
     print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL, file=sys.stderr)
 
 
-def fatal(text):
-    error(text)
-    raise SystemExit(1)
-
-
 def csv_writer():
     return csv.writer(sys.stdout)
 

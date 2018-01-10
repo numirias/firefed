@@ -5,7 +5,8 @@ from pathlib import Path
 from attr import attrib, attrs
 
 from firefed.feature import Feature, arg, formatter
-from firefed.output import fatal, out
+from firefed.output import out
+from firefed.util import fatal
 
 
 @attrs
@@ -62,7 +63,7 @@ class Cookies(Feature):
     host = arg('-H', '--host', help='filter by hostname (glob)')
     session_file = arg('-S', '--session-file', type=session_file_type,
                        help='extract cookies from session file (you can use %s'
-                       'as shortcuts for default file locations)' %
+                       ' as shortcuts for default file locations)' %
                        ', '.join('"%s"' % s for s in session_file_map))
 
     def prepare(self):
