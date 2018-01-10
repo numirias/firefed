@@ -12,8 +12,11 @@ from firefed.feature import Feature
 from firefed.util import make_parser
 
 
-# TODO: Refactor make_*_sqlite
+def profile_file(func):
+    func._profile_file = True
+    return func
 
+@profile_file
 def make_test_sqlite(profile_dir):
     path = Path(profile_dir) / 'test_sqlite.sqlite'
     con = sqlite3.connect(str(path))
@@ -25,6 +28,7 @@ def make_test_sqlite(profile_dir):
     ''')
     con.close()
 
+@profile_file
 def make_permissions_sqlite(profile_dir):
     path = Path(profile_dir) / 'permissions.sqlite'
     con = sqlite3.connect(str(path))
@@ -37,6 +41,7 @@ def make_permissions_sqlite(profile_dir):
     ''')
     con.close()
 
+@profile_file
 def make_formhistory_sqlite(profile_dir):
     path = Path(profile_dir) / 'formhistory.sqlite'
     con = sqlite3.connect(str(path))
@@ -48,6 +53,7 @@ def make_formhistory_sqlite(profile_dir):
     ''')
     con.close()
 
+@profile_file
 def make_places_sqlite(profile_dir):
     path = Path(profile_dir) / 'places.sqlite'
     con = sqlite3.connect(str(path))
@@ -85,6 +91,7 @@ def make_places_sqlite(profile_dir):
     ''')
     con.close()
 
+@profile_file
 def make_cookies_sqlite(profile_dir):
     path = Path(profile_dir) / 'cookies.sqlite'
     con = sqlite3.connect(str(path))
@@ -95,12 +102,14 @@ def make_cookies_sqlite(profile_dir):
     INSERT INTO moz_cookies VALUES('k2', 'v2', 'two.example', '/p2', 0, 1);
     ''')
 
+@profile_file
 def make_test_mozlz4(profile_dir):
     path = Path(profile_dir) / 'test_mozlz4.lz4'
     compressed = lz4.block.compress(b'foo')
     with open(path, 'wb') as f:
         f.write(b'mozLz40\0' + compressed)
 
+@profile_file
 def make_sessionstore_jsonlz4(profile_dir):
     path = Path(profile_dir) / 'sessionstore.jsonlz4'
     data = {
@@ -122,6 +131,7 @@ def make_sessionstore_jsonlz4(profile_dir):
     with open(path, 'wb') as f:
         f.write(b'mozLz40\0' + compressed)
 
+@profile_file
 def make_addon_startup_jsonlz4(profile_dir):
     path = Path(profile_dir) / 'addonStartup.json.lz4'
     data = {
@@ -136,6 +146,7 @@ def make_addon_startup_jsonlz4(profile_dir):
     with open(path, 'wb') as f:
         f.write(b'mozLz40\0' + compressed)
 
+@profile_file
 def make_extensions_json(profile_dir):
     path = Path(profile_dir) / 'extensions.json'
     data = {
@@ -183,6 +194,7 @@ def make_extensions_json(profile_dir):
     with open(path, 'w') as f:
         f.write(json.dumps(data))
 
+@profile_file
 def make_logins_json(profile_dir):
     path = Path(profile_dir) / 'logins.json'
     data = {
@@ -206,12 +218,14 @@ def make_logins_json(profile_dir):
     with open(path, 'w') as f:
         f.write(json.dumps(data))
 
+@profile_file
 def make_times_json(profile_dir):
     path = Path(profile_dir) / 'times.json'
     data = {"created": 1000}
     with open(path, 'w') as f:
         f.write(json.dumps(data))
 
+@profile_file
 def make_prefs_js(profile_dir):
     path = Path(profile_dir) / 'prefs.js'
     data = '''
@@ -241,18 +255,10 @@ def mock_home(tmpdir_factory):
 @fixture(scope='module')
 def mock_profile(mock_home):
     profile_path = mock_home / '.mozilla/firefox/random.default'
-    make_permissions_sqlite(profile_path)
-    make_formhistory_sqlite(profile_path)
-    make_places_sqlite(profile_path)
-    make_cookies_sqlite(profile_path)
-    make_test_sqlite(profile_path)
-    make_test_mozlz4(profile_path)
-    make_sessionstore_jsonlz4(profile_path)
-    make_addon_startup_jsonlz4(profile_path)
-    make_extensions_json(profile_path)
-    make_logins_json(profile_path)
-    make_prefs_js(profile_path)
-    make_times_json(profile_path)
+    for func in globals().values():
+        if not getattr(func, '_profile_file', False):
+            continue
+        func(profile_path)
     return profile_path
 
 @fixture(scope='module')
