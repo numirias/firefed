@@ -15,3 +15,5 @@ publish:
 	python setup.py bdist_wheel sdist
 	twine upload -r pypi dist/*
 	rm -rf *.egg-info build/ dist/
+readme:
+	python tools/make_readme.py

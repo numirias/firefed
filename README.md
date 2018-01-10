@@ -20,7 +20,7 @@ pip install firefed --upgrade
 
 ## Usage
 
-<!--help-start-->
+<!--usage-start-->
 ```
 $ firefed -h
 usage: firefed [-h] [-p PROFILE] [-v] [-f] FEATURE ...
@@ -58,7 +58,217 @@ features:
                         summarized).
     visits              Extract history of visited URLs.
 ```
-<!--help-end-->
+<!--usage-end-->
+
+## Features
+
+<!--features-start-->
+### Addons
+
+Extract installed addons/extensions.
+
+```
+usage: firefed addons [-h] [-a] [-A] [-S] [-f {list,short,csv}] [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a, --all             show all extensions (including system extensions)
+  -A, --show-addons-json
+                        show entries from "addons.json"
+  -S, --show-startup-json
+                        show addon startup entries (from
+                        "addonStartup.json.lz4")
+  -f {list,short,csv}, --format {list,short,csv}
+                        output format
+  -s, --summary         summarize results
+```
+
+### Bookmarks
+
+List bookmarks.
+
+```
+usage: firefed bookmarks [-h] [-f {tree,list,csv}] [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f {tree,list,csv}, --format {tree,list,csv}
+                        output format
+  -s, --summary         summarize results
+```
+
+### Cookies
+
+Extract cookies.
+
+```
+usage: firefed cookies [-h] [-H HOST] [-S SESSION_FILE] [-f {list,csv}] [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -H HOST, --host HOST  filter by hostname (glob)
+  -S SESSION_FILE, --session-file SESSION_FILE
+                        extract cookies from session file (you can use
+                        "recovery", "previous", "sessionstore"as shortcuts for
+                        default file locations)
+  -f {list,csv}, --format {list,csv}
+                        output format
+  -s, --summary         summarize results
+```
+
+### Downloads
+
+List downloaded files.
+
+```
+usage: firefed downloads [-h] [-s]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -s, --summary  summarize results
+```
+
+### Forms
+
+List form input history (search terms, address fields, etc.).
+
+```
+usage: firefed forms [-h] [-s]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -s, --summary  summarize results
+```
+
+### History
+
+Extract history.
+
+```
+usage: firefed history [-h] [-f {list,short,csv}] [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f {list,short,csv}, --format {list,short,csv}
+                        output format
+  -s, --summary         summarize results
+```
+
+### Hosts
+
+List known hosts.
+
+```
+usage: firefed hosts [-h] [-s]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -s, --summary  summarize results
+```
+
+### Infect
+
+Install a PoC reverse shell via a hidden extension.
+
+```
+usage: firefed infect [-h] [-u] [-c] [-y]
+
+optional arguments:
+  -h, --help       show this help message and exit
+  -u, --uninstall  uninstall malicious addon
+  -c, --check      check if profile appears infected
+  -y, --yes        don't prompt for confirmation
+```
+
+### InputHistory
+
+List history of urlbar inputs (typed URLs).
+
+```
+usage: firefed inputhistory [-h] [-s]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -s, --summary  summarize results
+```
+
+### Logins
+
+Extract saved logins.
+
+```
+usage: firefed logins [-h] [-l LIBNSS] [-p PASSWORD] [-f {table,list,csv}]
+                      [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -l LIBNSS, --libnss LIBNSS
+                        path to libnss3
+  -p PASSWORD, --master-password PASSWORD
+                        profile's master password (If not set, an empty
+                        password is tried. If that fails, you're prompted.)
+  -f {table,list,csv}, --format {table,list,csv}
+                        output format
+  -s, --summary         summarize results
+```
+
+### Permissions
+
+Extract permissions granted to particular hosts (e.g. location sharing).
+
+```
+usage: firefed permissions [-h] [-f {table,csv}] [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f {table,csv}, --format {table,csv}
+                        output format
+  -s, --summary         summarize results
+```
+
+### Preferences
+
+Extract user preferences. (This doesn't include defaults.)
+
+```
+usage: firefed preferences [-h] [-r RECOMMENDED] [-c] [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r RECOMMENDED, --recommended RECOMMENDED
+                        path to user.js file with recommended settings (use
+                        "userjs-master" or "userjs-relaxed" to load userjs
+                        config from Github)
+  -c, --check           check preferences for dubious settings
+  -s, --summary         summarize results
+```
+
+### Summary
+
+Summarize results of all features (that can be summarized).
+
+```
+usage: firefed summary [-h]
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
+### Visits
+
+Extract history of visited URLs.
+
+```
+usage: firefed visits [-h] [-f {list,csv}] [-s]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f {list,csv}, --format {list,csv}
+                        output format
+  -s, --summary         summarize results
+```
+
+<!--features-end-->
 
 ## Similar tools
 
