@@ -3,15 +3,16 @@ from abc import ABC, abstractmethod
 import argparse
 from collections import OrderedDict
 import csv
+import errno
 import json
+import os
+from pathlib import PurePath
 import sqlite3
 import sys
 
 import attr
 from attr import attrib, attrs
 import lz4.block
-
-from firefed.util import fatal
 
 
 def arg(*args, **kwargs):
@@ -63,7 +64,6 @@ def formatter(name, default=False):
 
 class NotMozLz4Error(Exception):
     """Raised when an LZ4 file doesn't use Mozilla's proprietary prefix."""
-    pass
 
 
 class FeatureHelpersMixin:
@@ -140,7 +140,12 @@ class FeatureHelpersMixin:
         """Return path from current profile."""
         full_path = self.session.profile / path
         if must_exist and not full_path.exists():
-            fatal('File "%s" does not exist.' % full_path)
+            print(dir(path))
+            raise FileNotFoundError(
+                errno.ENOENT,
+                os.strerror(errno.ENOENT),
+                PurePath(full_path).name,
+            )
         return full_path
 
 
@@ -252,7 +257,6 @@ class Feature(FeatureHelpersMixin, ABC):
 
     def prepare(self):
         """This method is called before run() or summarize()."""
-        pass
 
     def summarize(self):
         """Summarize the results of executing the feature."""
@@ -261,4 +265,3 @@ class Feature(FeatureHelpersMixin, ABC):
     @abstractmethod
     def run(self):
         """Run the feature."""
-        pass

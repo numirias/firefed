@@ -162,6 +162,9 @@ class TestFeatureHelpers:
         feature = MockFeature(session)
         assert feature.profile_path('baz') == Path('/foo/bar/baz')
 
+        with pytest.raises(FileNotFoundError, match='nonexistent'):
+            feature.profile_path('nonexistent', must_exist=True)
+
     def test_load_json(self, mock_feature):
         assert mock_feature.load_json('test_json.json')['foo']['bar'] == 2
 
@@ -186,19 +189,21 @@ class TestFeatureHelpers:
 
     def test_load_sqlite_missing_file(self, mock_feature):
         Foo = attr.make_class('Foo', ['c1', 'c2'])
-        with pytest.raises(FatalError) as e:
+        with pytest.raises(FileNotFoundError):
             list(mock_feature.load_sqlite(
                 'nonexistent.sqlite',
                 table='t1',
                 cls=Foo,
             ))
-        assert 'does not exist' in str(e)
-        # TODO Dedicated test for profile_path(..., must_exist=True)
 
     def test_load_mozlz4(self, mock_feature):
         assert mock_feature.load_mozlz4('test_mozlz4.lz4') == b'foo'
         with pytest.raises(NotMozLz4Error):
             mock_feature.load_mozlz4('test_json.json')
+
+    def test_load_json_mozlz4(self, mock_feature):
+        data = mock_feature.load_json_mozlz4('addonStartup.json.lz4')
+        assert 'app-system-defaults' in data
 
 
 class TestSmallFeatures:
@@ -321,13 +326,13 @@ class TestCookiesFeature:
         assert file == session_file_type('sessionstore.jsonlz4')
         assert file != session_file_type('nonexistent')
 
-        with pytest.raises(FatalError) as e:
-            Cookies(mock_session, session_file='nonexistent', format='list')()
-        assert 'not exist' in str(e)
-
         cookies = Cookies(mock_session).load_ss_cookies('sessionstore.jsonlz4')
         assert any((c.name, c.value, c.host) == ('sk2', 'sv2', 'two.example')
                    for c in cookies)
+
+    def test_sessionstore_missing_file(self, mock_session):
+        with pytest.raises(FatalError, match='not found'):
+            Cookies(mock_session, session_file='nonexistent', format='list')()
 
 
 class TestBookmarksFeature:
@@ -388,9 +393,8 @@ class TestLoginsFeature:
         assert ['http://one.example', 'foo', 'bar'] in data
 
     def test_no_libnss(self, mock_session):
-        with pytest.raises(FatalError) as e:
+        with pytest.raises(FatalError, match='Can\'t open libnss'):
             Logins(mock_session, libnss='nonexistent', format='csv')()
-        assert 'Can\'t open libnss' in str(e)
 
     def test_pw_prompt(self, mock_session, capsys, monkeypatch):
         import getpass # noqa
@@ -402,9 +406,8 @@ class TestLoginsFeature:
         assert 'foo' in out
 
     def test_wrong_pw(self, mock_session, capsys):
-        with pytest.raises(FatalError) as e:
+        with pytest.raises(FatalError, match='SEC_ERROR_BAD_PASSWORD'):
             Logins(mock_session, password='wrong', format='csv')()
-        assert 'SEC_ERROR_BAD_PASSWORD' in str(e)
 
 
 class TestPreferencesFeature:
