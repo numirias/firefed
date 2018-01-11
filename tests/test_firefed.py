@@ -355,7 +355,7 @@ class TestBookmarksFeature:
 
 class TestAddonsFeature:
 
-    def test_formats(self, mock_session, capsys):
+    def test_csv(self, mock_session, capsys):
         Addons(mock_session, format='csv')()
         out, _ = capsys.readouterr()
         data = parse_csv(out)
@@ -365,10 +365,27 @@ class TestAddonsFeature:
                 'True', 'type1', '/foo/bar', 'app-profile'] in data
         assert ['bar@baz', 'barextension', '0.1rc', 'False', '', 'False',
                 'type2', '/bar/baz', 'app-profile'] in data
+
+    def test_list(self, mock_session, capsys):
         Addons(mock_session, format='list')()
         out, _ = capsys.readouterr()
         assert out.startswith('fooextension')
         assert all(x in out for x in ['preliminary', 'disabled'])
+
+    def test_short(self, mock_session, capsys):
+        Addons(mock_session, format='short')()
+        out, _ = capsys.readouterr()
+        assert 'foo@bar \'fooextension\'' in out
+
+    def test_addons_json(self, mock_session, capsys):
+        Addons(mock_session, show_addons_json=True)()
+        out, _ = capsys.readouterr()
+        assert 'fooextension (foo@bar)' in out
+
+    def test_addon_startup_json(self, mock_session, capsys):
+        Addons(mock_session, show_startup_json=True)()
+        out, _ = capsys.readouterr()
+        assert '/foo/bar (enabled)' in out
 
     def test_summary(self, mock_session, capsys):
         Addons(mock_session, summary=True)()

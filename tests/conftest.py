@@ -1,6 +1,7 @@
 # flake8: noqa
 import json
 from pathlib import Path
+import re
 import shutil
 import sqlite3
 
@@ -136,8 +137,12 @@ def make_addon_startup_jsonlz4(profile_dir):
     path = Path(profile_dir) / 'addonStartup.json.lz4'
     data = {
         'app-system-defaults': {
+            'path': '/foo',
             'addons': {
-                'foo@bar': {},
+                'foo@bar': {
+                    'path': 'bar',
+                    'enabled': True,
+                },
             }
         }
     }
@@ -219,6 +224,23 @@ def make_logins_json(profile_dir):
         f.write(json.dumps(data))
 
 @profile_file
+def make_addons_json(profile_dir):
+    path = Path(profile_dir) / 'addons.json'
+    data = {
+        "schema": 5,
+        "addons": [
+            {
+                "id": "foo@bar",
+                "name": "fooextension",
+                "type": "type1",
+                "version": "1.2.3",
+            }
+        ]
+    }
+    with open(path, 'w') as f:
+        f.write(json.dumps(data))
+
+@profile_file
 def make_times_json(profile_dir):
     path = Path(profile_dir) / 'times.json'
     data = {"created": 1000}
@@ -282,3 +304,9 @@ def MockFeature():
         def run(self):
             pass
     return MockFeature
+
+@fixture
+def match():
+    def match(*args, **kwargs):
+        return re.match(*args, **kwargs)
+    return match

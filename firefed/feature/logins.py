@@ -110,7 +110,7 @@ class Logins(Feature):
                 nss.check_password('')
             except NSSError as e:
                 if e.name != 'SEC_ERROR_BAD_PASSWORD':
-                    fatal(e)
+                    fatal(e) # pragma: no cover
                 self.password = getpass.getpass(prompt='Master password: ')
                 out()
             else:

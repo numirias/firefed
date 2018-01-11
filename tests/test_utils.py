@@ -38,6 +38,8 @@ class TestUtils:
     def test_timestamps(self):
         ts = moz_to_unix_timestamp(1000000)
         assert ts == 1
+        ts = moz_to_unix_timestamp(None)
+        assert ts == 0
         dt = moz_datetime(1000000)
         assert dt == datetime.fromtimestamp(1)
 
