@@ -29,6 +29,13 @@ def error(text):
     print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL, file=sys.stderr)
 
 
+def outitem(title, elems, indent=4):
+    out(title)
+    for e in elems:
+        out('%s%s: %s' % (indent * ' ', *e))
+    out()
+
+
 def csv_writer():
     return csv.writer(sys.stdout)
 

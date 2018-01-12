@@ -13,9 +13,14 @@ from firefed.feature import Feature
 from firefed.util import make_parser
 
 
+def write_data_to(data, path):
+    with open(path, 'w') as f:
+        f.write(data)
+
 def profile_file(func):
     func._profile_file = True
     return func
+
 
 @profile_file
 def make_test_sqlite(profile_dir):
@@ -247,16 +252,23 @@ def make_times_json(profile_dir):
     with open(path, 'w') as f:
         f.write(json.dumps(data))
 
+
 @profile_file
 def make_prefs_js(profile_dir):
-    path = Path(profile_dir) / 'prefs.js'
     data = '''
     user_pref("foo.bar", false);
     user_pref("baz", 123);
     user_pref("abc", "def");
+    user_pref("beacon.enabled", true);
     '''
-    with open(path, 'w') as f:
-        f.write(data)
+    write_data_to(data, Path(profile_dir) / 'prefs.js')
+    data = '''
+    user_pref("foo.bar", false);
+    user_pref("baz", 456);
+    user_pref("userkey", "userval");
+    user_pref("browser.search.region", "US");
+    '''
+    write_data_to(data, Path(profile_dir) / 'user.js')
 
 @fixture
 def parser():

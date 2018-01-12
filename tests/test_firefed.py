@@ -2,10 +2,13 @@ import csv
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
+import re
 
 import attr
 from attr import attrs
 import pytest
+from pytest import mark
+from textwrap import dedent
 
 from firefed import Session
 from firefed.feature import (Addons, Bookmarks, Cookies, Downloads, Feature,
@@ -14,11 +17,16 @@ from firefed.feature import (Addons, Bookmarks, Cookies, Downloads, Feature,
                              arg, formatter)
 from firefed.feature.cookies import Cookie, session_file_type
 from firefed.feature.feature import NotMozLz4Error
+from firefed.feature.preferences import Preference
 from firefed.util import FatalError
 
 
-def parse_csv(str_):
-    return list(csv.reader(StringIO(str_)))
+def parse_csv(s):
+    return list(csv.reader(StringIO(s)))
+
+
+def nomarkup(s):
+    return re.sub(r'\x1b\[\d*m', '', s)
 
 
 class TestFeature:
@@ -434,14 +442,64 @@ class TestPreferencesFeature:
         out, _ = capsys.readouterr()
         lines = out.split('\n')
         assert 'foo.bar = false' in lines
-        assert 'baz = 123' in lines
+        assert 'baz = 456' in lines
         assert 'abc = "def"' in lines
+        assert 'userkey = "userval"' in lines
         # TODO More feature tests
 
     def test_summary(self, mock_session, capsys):
         Preferences(mock_session, summary=True)()
         out, _ = capsys.readouterr()
-        assert out == '3 custom preferences found.\n'
+        assert out == '6 custom preferences found.\n'
+
+    def test_parse_prefs(self, mock_session):
+        feature = Preferences(mock_session, summary=True)
+        prefs = list(feature.parse_prefs())
+        assert sorted(prefs) == sorted([
+            Preference('foo.bar', False),
+            Preference('baz', 456),
+            Preference('abc', 'def'),
+            Preference('userkey', 'userval'),
+            Preference("beacon.enabled", True),
+            Preference("browser.search.region", "US"),
+        ])
+
+    @mark.web
+    def test_recommended(self, mock_session, capsys):
+        Preferences(mock_session, check_recommended=True)()
+        out, _ = capsys.readouterr()
+        assert 'Reason: Disable' in out
+        assert 'Recommended: false' in nomarkup(out)
+        assert 'Recommended: "US"' in nomarkup(out)
+
+    def test_recommended_from_file(self, mock_session, capsys, tmpdir):
+        userjs_recommended = dedent('''
+        // PREF: foo
+        // bar
+        user_pref("userkey",		"other");
+
+        // PREF: abc
+        // def
+        user_pref("pref2",		true);
+        ''')
+        path = tmpdir.join('recommended.js')
+        path.write(userjs_recommended)
+        Preferences(mock_session, check_recommended=True,
+                    recommended_source=path)()
+        out, _ = capsys.readouterr()
+        assert 'Recommended: "other"' in nomarkup(out)
+        assert '1 bad values found.' in out
+
+        Preferences(mock_session, check_recommended=True,
+                    recommended_source='/dev/null')()
+        out, _ = capsys.readouterr()
+        assert 'All preferences seem good.' in out
+
+    def test_no_prefs(self, capsys, tmpdir):
+        session = Session(profile=tmpdir)
+        Preferences(session)()
+        out, _ = capsys.readouterr()
+        assert 'No preferences found.' in out
 
 
 class TestInfectFeature:
