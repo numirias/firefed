@@ -6,7 +6,7 @@ init:
 test:
 	pipenv run pytest -v --cov ${SOURCE_DIR} --cov-report term-missing:skip-covered tests/
 testq: # Run tests quickly (outside pipenv and without long tests)
-	pytest -m "not web" -v --cov ${SOURCE_DIR} --cov-report term-missing:skip-covered tests/
+	pytest -m "not web and not slow" -v --cov ${SOURCE_DIR} --cov-report term-missing:skip-covered tests/
 lint:
 	pipenv run flake8
 	pipenv run pylint --rcfile setup.cfg ${SOURCE_DIR}

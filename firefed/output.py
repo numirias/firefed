@@ -26,7 +26,7 @@ def disabled(text):
 
 
 def error(text):
-    print(Fore.RED + 'Error: %s' % text + Style.RESET_ALL, file=sys.stderr)
+    print(bad('Error: %s' % text), file=sys.stderr)
 
 
 def outitem(title, elems, indent=4):

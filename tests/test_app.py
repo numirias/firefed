@@ -3,17 +3,8 @@ from unittest import mock
 
 import pytest
 
-from firefed import Session
 from firefed.util import FatalError
 import firefed.__main__
-
-
-@pytest.fixture(scope='function')
-def feature(mock_profile, parser):
-    def func(*more_args):
-        args = parser.parse_args(['--profile', str(mock_profile), *more_args])
-        Session(args)
-    return func
 
 
 class TestMain:

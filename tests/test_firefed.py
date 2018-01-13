@@ -1,15 +1,17 @@
 import csv
+import os
+import re
+import subprocess
+import time
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-import re
-
-import attr
-from attr import attrs
-import pytest
-from pytest import mark
+from socket import AF_INET, SO_REUSEADDR, SOCK_STREAM, SOL_SOCKET, socket
 from textwrap import dedent
 
+import attr
+import pytest
+from attr import attrs
 from firefed import Session
 from firefed.feature import (Addons, Bookmarks, Cookies, Downloads, Feature,
                              Forms, History, Hosts, Infect, InputHistory,
@@ -19,6 +21,7 @@ from firefed.feature.cookies import Cookie, session_file_type
 from firefed.feature.feature import NotMozLz4Error
 from firefed.feature.preferences import Preference
 from firefed.util import FatalError
+from pytest import mark
 
 
 def parse_csv(s):
@@ -507,8 +510,79 @@ class TestInfectFeature:
     def test_check(self, mock_session, capsys):
         Infect(mock_session, want_check=True)()
         out, _ = capsys.readouterr()
-        assert 'doesn\'t seem fully installed' in out
-        # TODO More feature tests
+        assert 'doesn\'t seem (fully) installed' in out
+
+    @mark.slow
+    def test_infect(self, capsys, tmpdir, monkeypatch):
+        timeout = 20
+        profile_dir = Path(tmpdir) / 'realprofile'
+
+        def run_firefox():
+            return subprocess.Popen(['firefox', '--profile', str(profile_dir),
+                                     '-headless'])
+
+        os.makedirs(profile_dir)
+
+        p = run_firefox()
+        t_max = time.time() + timeout
+        while True:
+            # Assert that profile has been initialized
+            if (profile_dir / 'times.json').exists():
+                break
+            if time.time() > t_max:
+                raise Exception('Firefox timeout')
+            time.sleep(0.01)
+        p.terminate()
+
+        # Remove file so we can observe when it's re-created
+        os.remove(profile_dir / 'times.json')
+
+        # Firefox needs to run a second time before we can install the addon
+        p = run_firefox()
+        t_max = time.time() + timeout
+        while True:
+            # Assert that profile has been initialized
+            if (profile_dir / 'times.json').exists():
+                break
+            if time.time() > t_max:
+                raise Exception('Firefox timeout')
+            time.sleep(0.01)
+        p.terminate()
+
+        session = Session(profile=profile_dir)
+        Infect(session, want_check=True)()
+        out, _ = capsys.readouterr()
+        assert 'doesn\'t seem (fully) installed' in out
+
+        monkeypatch.setattr('builtins.input', lambda: 'n')
+        with pytest.raises(FatalError, match='Cancelled.'):
+            Infect(session)()
+
+        monkeypatch.setattr('builtins.input', lambda: 'y')
+        Infect(session)()
+        out, _ = capsys.readouterr()
+        assert 'Installing...' in out
+        assert 'Warning:' not in out # TODO
+
+        Infect(session, want_check=True)()
+        out, _ = capsys.readouterr()
+        assert 'Extension seems installed' in out
+
+        p = run_firefox()
+        s = socket(AF_INET, SOCK_STREAM)
+        s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        s.settimeout(timeout)
+        s.bind(('127.0.0.1', 8123))
+        s.listen(1)
+        conn, addr = s.accept()
+        data = conn.recv(1024)
+        assert b'OHAI' in data
+        conn.send(b'window\n')
+        data = conn.recv(1024)
+        assert b'ChromeWindow' in data
+        conn.close()
+
+        p.terminate()
 
 
 class TestSummaryFeature:

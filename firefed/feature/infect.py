@@ -12,10 +12,10 @@ from firefed.output import bad, error, good, out
 from firefed.util import fatal
 
 
-startup_key = 'app-system-defaults'
-addon_id = '@testpilot-addon'  # ID is in whitelist for legacy extensions
+startup_key = 'app-profile'
+addon_id = 'infect-poc@example.com'  # ID is in whitelist for legacy extensions
 addon_version = '1.0'
-addon_path = 'infect@example.com.xpi'
+addon_path = 'infect-poc@example.com.xpi' # TODO addon_filename
 addon_entry = {
     'id': addon_id,
     'syncGUID': 'infect',
@@ -60,7 +60,7 @@ addon_entry = {
     ],
     'targetPlatforms': [],
     'multiprocessCompatible': True,
-    'signedState': 0,
+    'signedState': 4,
     'seen': True,
     'dependencies': [],
     'hasEmbeddedWebExtension': False,
@@ -84,7 +84,7 @@ startup_entry = {
 }
 
 ADDON_STARTUP_FILE = 'addonStartup.json.lz4'
-EXT_DIR = 'extensions'
+EXT_DIR = 'extensions' # TODO read from startup file
 EXT_DB = 'extensions.json'
 
 ROOT_PATH = os.path.dirname(os.path.realpath(sys.modules['firefed'].__file__))
@@ -122,14 +122,15 @@ class Infect(Feature):
     def check(self, addon):
         checks = (
             addon is not None,
-            addon_id in self.addon_startup_json[startup_key]['addons'],
+            addon_id in self.addon_startup_json.get(startup_key,
+                                                    {}).get('addons', {}),
             Path(self.profile_path(os.path.join(EXT_DIR,
                                                 addon_path))).is_file(),
         )
         if all(checks):
             out(good('Extension seems installed.'))
         else:
-            out(bad('Extension doesn\'t seem fully installed.'))
+            out(bad('Extension doesn\'t seem (fully) installed.'))
 
     def uninstall(self, addon):
         out('Uninstalling...')
@@ -159,7 +160,7 @@ class Infect(Feature):
                 fatal('Cancelled.')
         out('Installing...')
         if addon is not None:
-            error('Addon entry "%s" already exists.' % addon_id)
+            error('Addon entry "%s" already exists.' % addon_id) # TODO warn
         else:
             addons = self.extensions_json['addons']
             addons.append(make_addon_entry(self.session.profile))
@@ -174,6 +175,8 @@ class Infect(Feature):
             error('Addon already registered in "%s".' % ADDON_STARTUP_FILE)
         else:
             startup[startup_key]['addons'][addon_id] = startup_entry
+            startup[startup_key]['path'] = str(self.profile_path(EXT_DIR))
+            print(startup[startup_key])
             self.write_addon_startup_json()
         try:
             os.mkdir(self.profile_path(EXT_DIR))
