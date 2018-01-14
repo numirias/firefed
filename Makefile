@@ -1,12 +1,15 @@
 SOURCE_DIR=firefed/
+TEST_CMD=pytest -v --cov ${SOURCE_DIR} --cov-report term-missing:skip-covered tests/
 
 init:
 	pip install pipenv --upgrade
 	pipenv install --dev --skip-lock
 test:
-	pipenv run pytest -v --cov ${SOURCE_DIR} --cov-report term-missing:skip-covered tests/
-testq: # Run tests quickly (outside pipenv and without long tests)
-	pytest -m "not web and not slow" -v --cov ${SOURCE_DIR} --cov-report term-missing:skip-covered tests/
+	pipenv run ${TEST_CMD}
+testci:
+	pipenv run ${TEST_CMD} -m "not unstable"
+testq: # Run tests quickly (outside pipenv and without slow tests)
+	${TEST_CMD} -m "not web and not unstable"
 lint:
 	pipenv run flake8
 	pipenv run pylint --rcfile setup.cfg ${SOURCE_DIR}
