@@ -13,9 +13,9 @@ from firefed.util import fatal
 
 
 startup_key = 'app-profile'
-addon_id = 'infect-poc@example.com'  # ID is in whitelist for legacy extensions
+addon_id = 'infect@example.com'  # ID is in whitelist for legacy extensions
 addon_version = '1.0'
-addon_path = 'infect-poc@example.com.xpi' # TODO addon_filename
+addon_path = 'infect@example.com.xpi' # TODO addon_filename
 addon_entry = {
     'id': addon_id,
     'syncGUID': 'infect',
@@ -176,7 +176,6 @@ class Infect(Feature):
         else:
             startup[startup_key]['addons'][addon_id] = startup_entry
             startup[startup_key]['path'] = str(self.profile_path(EXT_DIR))
-            print(startup[startup_key])
             self.write_addon_startup_json()
         try:
             os.mkdir(self.profile_path(EXT_DIR))

@@ -512,9 +512,10 @@ class TestInfectFeature:
         out, _ = capsys.readouterr()
         assert 'doesn\'t seem (fully) installed' in out
 
-    @mark.slow
+    @mark.unstable
     def test_infect(self, capsys, tmpdir, monkeypatch):
-        timeout = 20
+        # TODO Make this test work on Travis.
+        timeout = 10
         profile_dir = Path(tmpdir) / 'realprofile'
 
         def run_firefox():
@@ -527,7 +528,8 @@ class TestInfectFeature:
         t_max = time.time() + timeout
         while True:
             # Assert that profile has been initialized
-            if (profile_dir / 'times.json').exists():
+            if (profile_dir / 'times.json').exists() and \
+               (profile_dir / 'addonStartup.json.lz4').exists():
                 break
             if time.time() > t_max:
                 raise Exception('Firefox timeout')
