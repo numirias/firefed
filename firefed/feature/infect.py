@@ -5,17 +5,16 @@ import sys
 from zipfile import ZipFile
 
 from attr import attrs
-import lz4.block
 
 from firefed.feature import Feature, arg
-from firefed.output import bad, error, good, out
+from firefed.output import bad, good, out, warn
 from firefed.util import fatal
 
 
 startup_key = 'app-profile'
 addon_id = 'infect@example.com'  # ID is in whitelist for legacy extensions
 addon_version = '1.0'
-addon_path = 'infect@example.com.xpi' # TODO addon_filename
+ADDON_FILE = 'infect@example.com.xpi' # TODO addon_filename
 addon_entry = {
     'id': addon_id,
     'syncGUID': 'infect',
@@ -75,7 +74,7 @@ addon_entry = {
 startup_entry = {
     'enabled': True,
     'lastModifiedTime': 1506403392000,
-    'path': addon_path,
+    'path': ADDON_FILE,
     'version': addon_version,
     'bootstrapped': True,
     'dependencies': [],
@@ -83,17 +82,10 @@ startup_entry = {
     'hasEmbeddedWebExtension': False,
 }
 
-ADDON_STARTUP_FILE = 'addonStartup.json.lz4'
-EXT_DIR = 'extensions' # TODO read from startup file
+DEFAULT_EXT_DIR = Path('extensions') # TODO read from startup file
+ROOT_PATH = Path(sys.modules['firefed'].__file__).parent
 EXT_DB = 'extensions.json'
-
-ROOT_PATH = os.path.dirname(os.path.realpath(sys.modules['firefed'].__file__))
-
-
-def make_addon_entry(path):
-    entry = addon_entry.copy()
-    entry['path'] = os.path.join(path, EXT_DIR, addon_path)
-    return entry
+ADDON_STARTUP_FILE = 'addonStartup.json.lz4'
 
 
 @attrs
@@ -119,38 +111,25 @@ class Infect(Feature):
         else:
             self.install(addon)
 
+    @property
+    def ext_dir(self):
+        startup = self.startup_json
+        try:
+            return Path(startup[startup_key]['path'])
+        except KeyError:
+            return self.profile_path(DEFAULT_EXT_DIR)
+
     def check(self, addon):
         checks = (
             addon is not None,
-            addon_id in self.addon_startup_json.get(startup_key,
-                                                    {}).get('addons', {}),
-            Path(self.profile_path(os.path.join(EXT_DIR,
-                                                addon_path))).is_file(),
+            addon_id in self.startup_json.get(startup_key, {}).get('addons',
+                                                                   {}),
+            Path(self.ext_dir / ADDON_FILE).is_file(),
         )
         if all(checks):
             out(good('Extension seems installed.'))
         else:
             out(bad('Extension doesn\'t seem (fully) installed.'))
-
-    def uninstall(self, addon):
-        out('Uninstalling...')
-        addons = self.extensions_json['addons']
-        try:
-            addons.remove(addon)
-        except ValueError:
-            fatal('Can\'t remove addon from "%s". No entry found.' % EXT_DB)
-        self.write_extensions_json()
-        try:
-            del self.addon_startup_json[startup_key]['addons'][addon_id]
-        except KeyError:
-            fatal('Can\'t remove addon entry from "%s". No entry found.' %
-                  ADDON_STARTUP_FILE)
-        self.write_addon_startup_json()
-        target = self.profile_path(os.path.join(EXT_DIR, addon_path))
-        try:
-            os.remove(target)
-        except FileNotFoundError:
-            fatal('Can\'t remove XPI. File not found.')
 
     def install(self, addon):
         if not self.yes:
@@ -158,60 +137,85 @@ class Infect(Feature):
                 self.session.profile)
             if input().lower() not in ['y', 'yes']:
                 fatal('Cancelled.')
-        out('Installing...')
+        out('Installing to "%s"...' % self.session.profile)
         if addon is not None:
-            error('Addon entry "%s" already exists.' % addon_id) # TODO warn
+            warn('Addon entry "%s" already exists.' % addon_id)
         else:
             addons = self.extensions_json['addons']
-            addons.append(make_addon_entry(self.session.profile))
+            addons.append(self.make_addon_entry())
             self.write_extensions_json()
 
-        startup = self.addon_startup_json
+        startup = self.startup_json
         if startup_key not in startup:
             startup[startup_key] = {}
         if 'addons' not in startup[startup_key]:
             startup[startup_key]['addons'] = {}
         if addon_id in startup[startup_key]['addons']:
-            error('Addon already registered in "%s".' % ADDON_STARTUP_FILE)
+            warn('Addon already registered in "%s".' % ADDON_STARTUP_FILE)
         else:
             startup[startup_key]['addons'][addon_id] = startup_entry
-            startup[startup_key]['path'] = str(self.profile_path(EXT_DIR))
+            startup[startup_key]['path'] = str(self.ext_dir)
             self.write_addon_startup_json()
         try:
-            os.mkdir(self.profile_path(EXT_DIR))
+            os.mkdir(self.ext_dir)
         except FileExistsError:
             pass
-        source = os.path.join(ROOT_PATH, 'data/infect/')
-        target = self.profile_path(os.path.join(EXT_DIR, addon_path))
-        if os.path.isfile(target):
-            error('XPI file already exists.')
+        xpi_source = ROOT_PATH / 'data/infect/'
+        xpi_target = self.ext_dir / ADDON_FILE
+        xpi_path_rel = (Path(self.ext_dir.name) / ADDON_FILE)
+        if Path(xpi_target).exists():
+            warn('XPI already exists at "%s".' % xpi_path_rel)
         else:
-            out('Writing XPI file to "%s".' % target)
-            with ZipFile(target, 'w') as f:
-                for filename in os.listdir(source):
-                    path = os.path.join(source, filename)
+            out('Writing XPI file to "%s".' % xpi_path_rel)
+            with ZipFile(xpi_target, 'w') as f:
+                for filename in os.listdir(xpi_source):
+                    path = xpi_source / filename
                     print('Adding "%s".' % filename)
                     f.write(path, filename)
+        out('Done.')
+
+    def uninstall(self, addon):
+        out('Uninstalling from "%s"...' % self.session.profile)
+        addons = self.extensions_json['addons']
+        try:
+            addons.remove(addon)
+        except ValueError:
+            warn('Can\'t remove addon from "%s". No entry found.' % EXT_DB)
+        else:
+            self.write_extensions_json()
+        try:
+            del self.startup_json[startup_key]['addons'][addon_id]
+        except KeyError:
+            warn('Can\'t remove addon entry from "%s". No entry found.' %
+                 ADDON_STARTUP_FILE)
+        else:
+            self.write_addon_startup_json()
+        xpi_path = self.ext_dir / ADDON_FILE
+        xpi_path_rel = (Path(self.ext_dir.name) / ADDON_FILE)
+        if Path(xpi_path).exists():
+            out('Removing "%s".' % xpi_path_rel)
+            os.remove(xpi_path)
+        else:
+            warn('Can\'t remove XPI from "%s". File not found.' % xpi_path_rel)
+        out('Done.')
 
     def read_extensions_json(self):
         with open(self.profile_path(EXT_DB)) as f:
             self.extensions_json = json.load(f)
 
     def write_extensions_json(self):
-        out('Updating "extensions.json".')
+        out('Updating "%s".' % EXT_DB)
         with open(self.profile_path(EXT_DB), 'w') as f:
             json.dump(self.extensions_json, f)
 
     def read_addon_startup_json(self):
-        with open(self.profile_path(ADDON_STARTUP_FILE), 'rb') as f:
-            if f.read(8) != b'mozLz40\0':
-                raise Exception('Not Mozilla lz4 format.')
-            data = lz4.block.decompress(f.read())
-        self.addon_startup_json = json.loads(data)
+        self.startup_json = self.load_json_mozlz4(ADDON_STARTUP_FILE)
 
     def write_addon_startup_json(self):
-        compressed = lz4.block.compress(
-            bytes(json.dumps(self.addon_startup_json), 'utf-8'))
-        out('Updating "addonsStartup.json.lz4".')
-        with open(self.profile_path(ADDON_STARTUP_FILE), 'wb') as f:
-            f.write(b'mozLz40\0' + compressed)
+        out('Updating "%s".' % ADDON_STARTUP_FILE)
+        self.write_json_mozlz4(ADDON_STARTUP_FILE, self.startup_json)
+
+    def make_addon_entry(self):
+        entry = addon_entry.copy()
+        entry['path'] = str(self.ext_dir / ADDON_FILE)
+        return entry

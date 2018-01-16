@@ -29,6 +29,10 @@ def error(text):
     print(bad('Error: %s' % text), file=sys.stderr)
 
 
+def warn(text):
+    print(okay('Warning: %s' % text), file=sys.stderr)
+
+
 def outitem(title, elems, indent=4):
     out(title)
     for e in elems:

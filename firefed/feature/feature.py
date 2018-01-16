@@ -119,6 +119,14 @@ class FeatureHelpersMixin:
     def load_json_mozlz4(self, path):
         return json.loads(self.load_mozlz4(path))
 
+    def write_mozlz4(self, path, data):
+        compressed = lz4.block.compress(bytes(data, 'utf-8'))
+        with open(self.profile_path(path), 'wb') as f:
+            f.write(b'mozLz40\0' + compressed)
+
+    def write_json_mozlz4(self, path, data):
+        self.write_mozlz4(path, json.dumps(data))
+
     @staticmethod
     def csv_from_items(items, stream=None):
         """Write a list of items to stream in CSV format.
