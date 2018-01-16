@@ -1,5 +1,0 @@
-#!/bin/sh
-
-ENTRYPATH=`dirname $0`
-
-python3 "$ENTRYPATH/../firefed" $@

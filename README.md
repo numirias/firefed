@@ -231,15 +231,23 @@ optional arguments:
 Extract user preferences. (This doesn't include defaults.)
 
 ```
-usage: firefed preferences [-h] [-r RECOMMENDED_SOURCE] [-c] [-s]
+usage: firefed preferences [-h] [-d] [-c] [-S PATH] [-b] [-i] [-s]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -r RECOMMENDED_SOURCE, --recommended RECOMMENDED_SOURCE
-                        path to user.js file with recommended settings (use
-                        "userjs-master" or "userjs-relaxed" to load userjs
-                        config from Github)
-  -c, --check           check preferences for dubious settings
+  -d, --duplicates      show all preferences, even if the key appears multiple
+                        times (otherwise, only the last occurence is shown
+                        because it overrides all previous occurences)
+  -c, --check           compare preferences with recommended settings
+  -S PATH, --source PATH
+                        path to file with recommended settings (use "userjs-
+                        master" or "userjs-relaxed" to load userjs config from
+                        Github)
+  -b, --bad-only        when comparing with recommendations, show only bad
+                        values
+  -i, --include-undefined
+                        when comparing with recommendations, treat undefined
+                        preferences as bad values
   -s, --summary         summarize results
 ```
 

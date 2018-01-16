@@ -23,6 +23,8 @@ class Preference:
 
     @staticmethod
     def type_to_repr(val):
+        if val is None:
+            return 'undefined'
         if isinstance(val, str):
             return '"%s"' % val
         if isinstance(val, bool):
@@ -46,15 +48,25 @@ class Preferences(Feature):
 
     This feature reads the preferences from "prefs.js" and "user.js".
     """
-
+    allow_duplicates = \
+        arg('-d', '--duplicates', action='store_true', help='show all '
+            'preferences, even if the key appears multiple times (otherwise, '
+            'only the last occurence is shown because it overrides all '
+            'previous occurences)')
+    want_check_recommended = \
+        arg('-c', '--check', action='store_true', help='compare preferences '
+            'with recommended settings')
     recommended_source = \
-        arg('-r', '--recommended', default='userjs-relaxed', help='path to '
-            'user.js file with recommended settings (use "userjs-master" or '
-            '"userjs-relaxed" to load userjs config from Github)')
-    check_recommended = \
-        arg('-c', '--check', action='store_true', help='check preferences for '
-            'dubious settings')
-    # TODO No-override (Optionally show settings that are duplicates)
+        arg('-S', '--source', default='userjs-relaxed', metavar='PATH',
+            help='path to file with recommended settings (use "userjs-master" '
+            'or "userjs-relaxed" to load userjs config from Github)')
+    bad_only = \
+        arg('-b', '--bad-only', action='store_true', help='when comparing with'
+            ' recommendations, show only bad values')
+    include_undefined = \
+        arg('-i', '--include-undefined', action='store_true', help='when '
+            'comparing with recommendations, treat undefined preferences as '
+            'bad values')
 
     def prepare(self):
         self.prefs = list(self.parse_prefs())
@@ -63,23 +75,31 @@ class Preferences(Feature):
         out('%d custom preferences found.' % len(self.prefs))
 
     def run(self):
-        if not self.check_recommended:
-            if not self.prefs:
-                out('No preferences found.')
-                return
+        if self.want_check_recommended:
+            self.check_recommended()
+        elif not self.prefs:
+            out('No preferences found.')
+        else:
             for pref in self.prefs:
                 out(pref)
-            return
+
+    def check_recommended(self):
         self.summarize()
         prefs_rec = list(self.parse_userjs(self.recommended_source))
         out('%d recommendeded values read.\n' % len(prefs_rec))
         bad_num = 0
-        for pref in self.prefs:
+        for pref_rec in prefs_rec:
             try:
-                pref_rec = next((p for p in prefs_rec if p.key == pref.key))
+                pref = next(p for p in self.prefs if p.key == pref_rec.key)
             except StopIteration:
-                continue
+                if self.include_undefined:
+                    # Create a fake preference with an undefined value
+                    pref = Preference(pref_rec.key, None)
+                else:
+                    continue
             if pref_rec.value == pref.value:
+                if self.bad_only:
+                    continue
                 markup = good
             else:
                 markup = bad
@@ -95,18 +115,19 @@ class Preferences(Feature):
             out('%d bad values found.' % bad_num)
 
     def parse_prefs(self):
-        pref_dict = {}
+        prefs = {}
         for pref_file in pref_files:
             try:
                 with open(self.profile_path(pref_file)) as f:
                     data = f.read()
             except FileNotFoundError:
                 data = ''
-            # TODO Handle no preferences set
             matches = re.findall(pref_regex, data)
             for _, key, val in matches:
-                pref_dict[key] = Preference(key, Preference.repr_to_type(val))
-        return pref_dict.values()
+                # With allow_duplicates we don't actually want unique pref keys
+                dict_key = key + val if self.allow_duplicates else key
+                prefs[dict_key] = Preference(key, Preference.repr_to_type(val))
+        return prefs.values()
 
     @staticmethod
     def parse_userjs(filename):
@@ -118,7 +139,7 @@ class Preferences(Feature):
                 data = f.read()
         description = None
         for line in data.split('\n'):
-            match = re.match(pref_regex, line) # TODO findall?
+            match = re.match(pref_regex, line)
             if match is not None:
                 key, val = match[2], Preference.repr_to_type(match[3])
                 yield Preference(key, val, info=description)

@@ -267,6 +267,7 @@ def make_prefs_js(profile_dir):
     user_pref("baz", 456);
     user_pref("userkey", "userval");
     user_pref("browser.search.region", "US");
+    user_pref("goodkey", "goodval");
     '''
     write_data_to(data, Path(profile_dir) / 'user.js')
 

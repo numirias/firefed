@@ -457,7 +457,7 @@ class TestPreferencesFeature:
     def test_summary(self, mock_session, capsys):
         Preferences(mock_session, summary=True)()
         out, _ = capsys.readouterr()
-        assert out == '6 custom preferences found.\n'
+        assert out == '7 custom preferences found.\n'
 
     def test_parse_prefs(self, mock_session):
         feature = Preferences(mock_session, summary=True)
@@ -469,11 +469,18 @@ class TestPreferencesFeature:
             Preference('userkey', 'userval'),
             Preference("beacon.enabled", True),
             Preference("browser.search.region", "US"),
+            Preference("goodkey", "goodval"),
         ])
+
+    def test_allow_duplicates(self, mock_session, capsys):
+        Preferences(mock_session, allow_duplicates=True)()
+        out, _ = capsys.readouterr()
+        assert 'baz = 123' in out
+        assert 'baz = 456' in out
 
     @mark.web
     def test_recommended(self, mock_session, capsys):
-        Preferences(mock_session, check_recommended=True)()
+        Preferences(mock_session, want_check_recommended=True)()
         out, _ = capsys.readouterr()
         assert 'Reason: Disable' in out
         assert 'Should: false' in nomarkup(out)
@@ -488,16 +495,31 @@ class TestPreferencesFeature:
         // PREF: abc
         // def
         user_pref("pref2",		true);
+
+        // PREF: ghi
+        user_pref("goodkey",		"goodval");
         ''')
         path = tmpdir.join('recommended.js')
         path.write(userjs_recommended)
-        Preferences(mock_session, check_recommended=True,
+        Preferences(mock_session, want_check_recommended=True,
                     recommended_source=path)()
         out, _ = capsys.readouterr()
         assert 'Should: "other"' in nomarkup(out)
+        assert 'pref2' not in out
+        assert 'goodkey' in out
         assert '1 bad values found.' in out
 
-        Preferences(mock_session, check_recommended=True,
+        Preferences(mock_session, want_check_recommended=True,
+                    recommended_source=path, include_undefined=True)()
+        out, _ = capsys.readouterr()
+        assert 'pref2 = undefined' in out
+
+        Preferences(mock_session, want_check_recommended=True,
+                    recommended_source=path, bad_only=True)()
+        out, _ = capsys.readouterr()
+        assert 'goodkey' not in out
+
+        Preferences(mock_session, want_check_recommended=True,
                     recommended_source='/dev/null')()
         out, _ = capsys.readouterr()
         assert 'All preferences seem good.' in out
