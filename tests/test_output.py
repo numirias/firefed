@@ -3,13 +3,13 @@ from firefed import Session, output
 
 class TestOutput:
 
-    def test_error(self, capsys):
+    def test_error(self, stdouterr):
         output.out('foo')
-        out, err = capsys.readouterr()
+        out, err = stdouterr()
         assert out == 'foo\n'
         assert err == ''
         output.error('foo')
-        out, err = capsys.readouterr()
+        out, err = stdouterr()
         assert out == ''
         assert 'foo' in err
 

@@ -27,13 +27,12 @@ class TestUtils:
         with pytest.raises(argparse.ArgumentTypeError):
             profile_dir_type('nonexistent')
 
-    def test_argparse(self, capsys, mock_profile):
+    def test_argparse(self, stdout, mock_profile):
         parser = make_parser()
         with pytest.raises(SystemExit) as e:
             parser.parse_args(['-h'])
         assert e.value.code == 0
-        out, _ = capsys.readouterr()
-        assert out.startswith('usage:')
+        assert stdout().startswith('usage:')
 
     def test_timestamps(self):
         ts = moz_to_unix_timestamp(1000000)
@@ -43,15 +42,14 @@ class TestUtils:
         dt = moz_datetime(1000000)
         assert dt == datetime.fromtimestamp(1)
 
-    def test_tabulate(self, capsys):
+    def test_tabulate(self, stdout):
         rows = [
             ('r1c1', 'r1c2_'),
             ('r2c1__', 'r2c2'),
         ]
         headers = ['c1', 'c2']
         tabulate(rows, headers)
-        out, _ = capsys.readouterr()
-        assert out == (
+        assert stdout() == (
             'c1      c2   \n'
             '------  -----\n'
             'r1c1    r1c2_\n'

@@ -20,27 +20,25 @@ class TestMain:
             with pytest.raises(FatalError, match='doesn\'t look like'):
                 firefed.__main__.run()
 
-    def test_exit_with_fatal_error(self, capsys, match):
+    def test_exit_with_fatal_error(self, stdouterr, match):
         argv = ['firefed', '--profile', '/dev/null', 'summary']
         with pytest.raises(SystemExit) as e:
             with mock.patch.object(sys, 'argv', argv):
                     firefed.__main__.main()
         assert e.value.code != 0
-        out, err = capsys.readouterr()
+        out, err = stdouterr()
         assert out == ''
         assert match('.*Error:.*', err)
 
-    def test_main_help(self, capsys):
+    def test_main_help(self, stdout):
         with mock.patch.object(sys, 'argv', ['firefed', '-h']):
             with pytest.raises(SystemExit) as e:
                 firefed.__main__.main()
         assert e.value.code == 0
-        out, _ = capsys.readouterr()
-        assert out.startswith('usage:')
+        assert stdout().startswith('usage:')
 
-    def test_main_with_feature(self, mock_profile, capsys):
+    def test_main_with_feature(self, mock_profile, stdout):
         argv = ['firefed', '--profile', str(mock_profile), 'summary']
         with mock.patch.object(sys, 'argv', argv):
             firefed.__main__.main()
-        out, _ = capsys.readouterr()
-        assert 'Profile created' in out
+        assert 'Profile created' in stdout()

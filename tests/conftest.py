@@ -323,3 +323,21 @@ def match():
     def match(*args, **kwargs):
         return re.match(*args, **kwargs)
     return match
+
+@fixture
+def stdout(capsys):
+    def func():
+        out, _ = capsys.readouterr()
+        return out
+    return func
+
+@fixture
+def stderr(capsys):
+    def func():
+        _, err = capsys.readouterr()
+        return err
+    return func
+
+@fixture
+def stdouterr(capsys):
+    return capsys.readouterr

@@ -156,14 +156,13 @@ class TestFeature:
         assert not F1.summarizable()
         assert F2.summarizable()
 
-    def test_all_csvs(self, mock_session, capsys):
+    def test_all_csvs(self, mock_session, stdout):
         """All features with a CSV formatter should be CSV-parseable."""
         for Feature_ in Feature.feature_map().values():
             if 'csv' in Feature_.formatters():
                 kwargs = {'password': 'master'} if Feature_ is Logins else {}
                 Feature_(mock_session, format='csv', **kwargs)()
-                out, _ = capsys.readouterr()
-                parse_csv(out)
+                parse_csv(stdout())
 
 
 class TestFeatureHelpers:
@@ -224,91 +223,74 @@ class TestFeatureHelpers:
 
 class TestSmallFeatures:
 
-    def test_downloads(self, mock_session, capsys):
+    def test_downloads(self, mock_session, stdout):
         Downloads(mock_session)()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
+        lines = stdout().split('\n')
         assert any(l.endswith(' file:///foo/bar') for l in lines)
         assert 'nodownload' not in lines
 
-    def test_hosts(self, mock_session, capsys):
+    def test_hosts(self, mock_session, stdout):
         Hosts(mock_session)()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
-        assert 'two.example' in lines
+        assert 'two.example' in stdout().split('\n')
 
-    def test_input_history(self, mock_session, capsys):
+    def test_input_history(self, mock_session, stdout):
         InputHistory(mock_session)()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
-        assert 'bar' in lines
+        assert 'bar' in stdout().split('\n')
 
-    def test_forms(self, mock_session, capsys):
+    def test_forms(self, mock_session, stdout):
         Forms(mock_session)()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
-        assert 'ccc=ddd' in lines
+        assert 'ccc=ddd' in stdout().split('\n')
 
 
 class TestPermissionsFeature:
 
-    def test_table(self, mock_session, capsys):
+    def test_table(self, mock_session, stdout):
         Permissions(mock_session, format='table')()
-        out, _ = capsys.readouterr()
-        assert ['https://two.example/',
-                'permission2'] in (line.split() for line in out.split('\n'))
+        assert ['https://two.example/', 'permission2'] in \
+            (line.split() for line in stdout().split('\n'))
 
-    def test_csv(self, mock_session, capsys):
+    def test_csv(self, mock_session, stdout):
         Permissions(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
+        data = parse_csv(stdout())
         assert len(data) == 4
         assert data[0] == ['host', 'permission']
         assert ['https://two.example/', 'permission2'] in data
 
-    def test_summary(self, mock_session, capsys):
+    def test_summary(self, mock_session, stdout):
         Permissions(mock_session, summary=True)()
-        out, _ = capsys.readouterr()
-        assert '3 permissions found' in out
+        assert '3 permissions found' in stdout()
 
 
 class TestHistoryFeature:
 
-    def test_formats(self, mock_session, capsys):
+    def test_formats(self, mock_session, stdout):
         History(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
+        data = parse_csv(stdout())
         assert len(data) == 4
         assert data[0] == ['url', 'title', 'last_visit_date', 'visit_count']
         assert ['http://two.example/', 'two', '2', '200'] in data
 
         History(mock_session, format='list')()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
+        lines = stdout().split('\n')
         assert 'http://two.example/' in lines
         assert '    Visits:     200' in lines
 
         History(mock_session, format='short')()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
-        assert 'http://one.example/' in lines
+        assert 'http://one.example/' in stdout().split('\n')
 
 
 class TestVisitsFeature:
 
-    def test_list(self, mock_session, capsys):
+    def test_list(self, mock_session, stdout):
         Visits(mock_session, format='list')()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
         assert '%s %s' % (datetime.fromtimestamp(1), 'http://one.example/') \
-            in lines
+            in stdout().split('\n')
 
-    def test_csv(self, mock_session, capsys):
+    def test_csv(self, mock_session, stdout):
         Visits(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
+        data = parse_csv(stdout())
         assert data[0] == ['id', 'from_visit', 'visit_date', 'url']
-        assert ['1', '2', '1', 'http://one.example/']
+        assert data[1] == ['1', '2', '1', 'http://one.example/']
 
 
 class TestCookiesFeature:
@@ -322,19 +304,16 @@ class TestCookiesFeature:
         assert all(x in str(cookie).lower() for x in ['foo=bar', 'path=/baz',
                    'secure', 'httponly', 'domain=one.example'])
 
-    def test_list(self, mock_session, capsys):
+    def test_list(self, mock_session, stdout):
         Cookies(mock_session, format='list')()
-        out, _ = capsys.readouterr()
-        assert any(line.startswith('k1=v1') for line in out.split('\n'))
+        assert any(line.startswith('k1=v1') for line in stdout().split('\n'))
 
         Cookies(mock_session, host='tw*.example', format='list')()
-        out, _ = capsys.readouterr()
-        assert out.startswith('k2=v2')
+        assert stdout().startswith('k2=v2')
 
-    def test_csv(self, mock_session, capsys):
+    def test_csv(self, mock_session, stdout):
         Cookies(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
+        data = parse_csv(stdout())
         assert ['k1', 'v1', 'one.example', '/', '1', '0'] in data
 
     def test_sessionstore(self, mock_session):
@@ -353,28 +332,24 @@ class TestCookiesFeature:
 
 class TestBookmarksFeature:
 
-    def test_formats(self, mock_session, capsys):
+    def test_formats(self, mock_session, stdout):
         Bookmarks(mock_session, format='list')()
-        out, _ = capsys.readouterr()
-        assert 'bookmark in level2' in out.split('\n')
+        assert 'bookmark in level2' in stdout().split('\n')
 
         Bookmarks(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
+        data = parse_csv(stdout())
         assert ['bookmark in level2', 'http://two.example/', '5', '55'] in data
 
         Bookmarks(mock_session, format='tree')()
-        out, _ = capsys.readouterr()
-        assert 'http://one.example' in out
+        assert 'http://one.example' in stdout()
         # TODO Tests could be improved, esp. for tree output
 
 
 class TestAddonsFeature:
 
-    def test_csv(self, mock_session, capsys):
+    def test_csv(self, mock_session, stdout):
         Addons(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
+        data = parse_csv(stdout())
         assert data[0] == ['id', 'name', 'version', 'enabled', 'signed',
                            'visible', 'type', 'path', 'location']
         assert ['foo@bar', 'fooextension', '1.2.3', 'True', 'preliminary',
@@ -382,82 +357,74 @@ class TestAddonsFeature:
         assert ['bar@baz', 'barextension', '0.1rc', 'False', '', 'False',
                 'type2', '/bar/baz', 'app-profile'] in data
 
-    def test_list(self, mock_session, capsys):
+    def test_list(self, mock_session, stdout):
         Addons(mock_session, format='list')()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert out.startswith('fooextension')
         assert all(x in out for x in ['preliminary', 'disabled'])
 
-    def test_short(self, mock_session, capsys):
+    def test_short(self, mock_session, stdout):
         Addons(mock_session, format='short')()
-        out, _ = capsys.readouterr()
-        assert 'foo@bar \'fooextension\'' in out
+        assert 'foo@bar \'fooextension\'' in stdout()
 
-    def test_addons_json(self, mock_session, capsys):
+    def test_addons_json(self, mock_session, stdout):
         Addons(mock_session, show_addons_json=True)()
-        out, _ = capsys.readouterr()
-        assert 'fooextension (foo@bar)' in out
+        assert 'fooextension (foo@bar)' in stdout()
 
-    def test_addon_startup_json(self, mock_session, capsys):
+    def test_addon_startup_json(self, mock_session, stdout):
         Addons(mock_session, show_startup_json=True)()
-        out, _ = capsys.readouterr()
-        assert '/foo/bar (enabled)' in out
+        assert '/foo/bar (enabled)' in stdout()
 
-    def test_summary(self, mock_session, capsys):
+    def test_summary(self, mock_session, stdout):
         Addons(mock_session, summary=True)()
-        out, _ = capsys.readouterr()
-        assert out == '3 addons found. (2 enabled)\n'
+        assert stdout() == '3 addons found. (2 enabled)\n'
 
 
 class TestLoginsFeature:
 
-    def test_formats(self, mock_session, capsys):
+    def test_formats(self, mock_session, stdout):
         Logins(mock_session, password='master', format='table')()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert all(x in out for x in ['foo', 'bar'])
 
         Logins(mock_session, password='master', format='list')()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert all(x in out for x in ['foo', 'bar'])
 
         Logins(mock_session, password='master', format='csv')()
-        out, _ = capsys.readouterr()
-        data = parse_csv(out)
+        data = parse_csv(stdout())
         assert ['http://one.example', 'foo', 'bar'] in data
 
     def test_no_libnss(self, mock_session):
         with pytest.raises(FatalError, match='Can\'t open libnss'):
             Logins(mock_session, libnss='nonexistent', format='csv')()
 
-    def test_pw_prompt(self, mock_session, capsys, monkeypatch):
+    def test_pw_prompt(self, mock_session, stdout, monkeypatch):
         import getpass # noqa
         def mock_getpass(*args, **kwargs):
             return 'master'
         monkeypatch.setattr('getpass.getpass', mock_getpass)
         Logins(mock_session, format='csv')()
-        out, _ = capsys.readouterr()
-        assert 'foo' in out
+        assert 'foo' in stdout()
 
-    def test_wrong_pw(self, mock_session, capsys):
+    def test_wrong_pw(self, mock_session):
         with pytest.raises(FatalError, match='SEC_ERROR_BAD_PASSWORD'):
             Logins(mock_session, password='wrong', format='csv')()
 
 
 class TestPreferencesFeature:
 
-    def test_preferences(self, mock_session, capsys):
+    def test_preferences(self, mock_session, stdout):
         Preferences(mock_session)()
-        out, _ = capsys.readouterr()
-        lines = out.split('\n')
+        lines = stdout().split('\n')
         assert 'foo.bar = false' in lines
         assert 'baz = 456' in lines
         assert 'abc = "def"' in lines
         assert 'userkey = "userval"' in lines
 
-    def test_summary(self, mock_session, capsys):
+    def test_summary(self, mock_session, stdout):
         Preferences(mock_session, summary=True)()
-        out, _ = capsys.readouterr()
-        assert out == '7 custom preferences found.\n'
+        assert stdout() == '7 custom preferences found.\n'
 
     def test_parse_prefs(self, mock_session):
         feature = Preferences(mock_session, summary=True)
@@ -472,21 +439,21 @@ class TestPreferencesFeature:
             Preference("goodkey", "goodval"),
         ])
 
-    def test_allow_duplicates(self, mock_session, capsys):
+    def test_allow_duplicates(self, mock_session, stdout):
         Preferences(mock_session, allow_duplicates=True)()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert 'baz = 123' in out
         assert 'baz = 456' in out
 
     @mark.web
-    def test_recommended(self, mock_session, capsys):
+    def test_recommended(self, mock_session, stdout):
         Preferences(mock_session, want_check_recommended=True)()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert 'Reason: Disable' in out
         assert 'Should: false' in nomarkup(out)
         assert 'Should: "US"' in nomarkup(out)
 
-    def test_recommended_from_file(self, mock_session, capsys, tmpdir):
+    def test_recommended_from_file(self, mock_session, tmpdir, stdout):
         userjs_recommended = dedent('''
         // PREF: foo
         // bar
@@ -503,7 +470,7 @@ class TestPreferencesFeature:
         path.write(userjs_recommended)
         Preferences(mock_session, want_check_recommended=True,
                     recommended_source=path)()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert 'Should: "other"' in nomarkup(out)
         assert 'pref2' not in out
         assert 'goodkey' in out
@@ -511,43 +478,40 @@ class TestPreferencesFeature:
 
         Preferences(mock_session, want_check_recommended=True,
                     recommended_source=path, include_undefined=True)()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert 'pref2 = undefined' in out
 
         Preferences(mock_session, want_check_recommended=True,
                     recommended_source=path, bad_only=True)()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert 'goodkey' not in out
 
         Preferences(mock_session, want_check_recommended=True,
                     recommended_source='/dev/null')()
-        out, _ = capsys.readouterr()
+        out = stdout()
         assert 'All preferences seem good.' in out
 
-    def test_no_prefs(self, capsys, tmpdir):
+    def test_no_prefs(self, stdout, tmpdir):
         session = Session(profile=tmpdir)
         Preferences(session)()
-        out, _ = capsys.readouterr()
-        assert 'No preferences found.' in out
+        assert 'No preferences found.' in stdout()
 
 
 class TestInfectFeature:
 
-    def test_check(self, mock_session, capsys):
+    def test_check(self, mock_session, stdout):
         Infect(mock_session, want_check=True)()
-        out, _ = capsys.readouterr()
-        assert 'doesn\'t seem (fully) installed' in out
+        assert 'doesn\'t seem (fully) installed' in stdout()
 
-    def test_infect_cycle(self, mock_session, capsys, monkeypatch):
+    def test_infect_cycle(self, mock_session, monkeypatch, stdout, stderr,
+                          stdouterr):
         def assert_not_installed():
             Infect(mock_session, want_check=True)()
-            out, _ = capsys.readouterr()
-            assert 'doesn\'t seem (fully) installed' in out
+            assert 'doesn\'t seem (fully) installed' in stdout()
 
         def assert_installed():
             Infect(mock_session, want_check=True)()
-            out, _ = capsys.readouterr()
-            assert 'Extension seems installed' in out
+            assert 'Extension seems installed' in stdout()
 
         assert_not_installed()
 
@@ -559,7 +523,7 @@ class TestInfectFeature:
         # Start infect and confirm
         monkeypatch.setattr('builtins.input', lambda: 'y')
         Infect(mock_session)()
-        out, err = capsys.readouterr()
+        out, err = stdouterr()
         assert 'Installing' in out
         assert 'Warning:' not in err
 
@@ -567,14 +531,14 @@ class TestInfectFeature:
 
         # Try to install again, which should raise warnings
         Infect(mock_session)()
-        out, err = capsys.readouterr()
+        err = stderr()
         assert 'Addon entry "infect@example.com" already exists.' in err
         assert 'Addon already registered in "addonStartup.json.lz4".' in err
         assert 'XPI already exists at' in err
 
         # Uninstall
         Infect(mock_session, want_uninstall=True)()
-        out, err = capsys.readouterr()
+        out, err = stdouterr()
         assert 'Updating "extensions.json".' in out
         assert 'Updating "addonStartup.json.lz4".' in out
         assert 'Warning:' not in err
@@ -583,14 +547,14 @@ class TestInfectFeature:
 
         # Uninstall again, which should raise warnings
         Infect(mock_session, want_uninstall=True)()
-        out, err = capsys.readouterr()
+        err = stderr()
         assert 'Warning: ' in err
         assert 'Can\'t remove addon from "extensions.json".' in err
         assert 'Can\'t remove addon entry from "addonStartup.json.lz4"' in err
         assert 'Can\'t remove XPI.'
 
     @mark.unstable
-    def test_infect_cycle_with_firefox(self, capsys, tmpdir, monkeypatch):
+    def test_infect_cycle_with_firefox(self, stdout, tmpdir, monkeypatch):
         # TODO Make this test work on Travis
         timeout = 10
         profile_dir = Path(tmpdir) / 'realprofile'
@@ -632,16 +596,14 @@ class TestInfectFeature:
         # Addon should not be installed
         session = Session(profile=profile_dir)
         Infect(session, want_check=True)()
-        out, _ = capsys.readouterr()
-        assert 'doesn\'t seem (fully) installed' in out
+        assert 'doesn\'t seem (fully) installed' in stdout()
 
         # Install addon
         Infect(session, yes=True)()
 
         # Addon should be installed
         Infect(session, want_check=True)()
-        out, _ = capsys.readouterr()
-        assert 'Extension seems installed' in out
+        assert 'Extension seems installed' in stdout()
 
         # Wait for reverse shell and interact with it
         p = run_firefox()
@@ -667,8 +629,7 @@ class TestSummaryFeature:
         summary = Summary(mock_session)
         assert summary.creation_date() == datetime.fromtimestamp(1)
 
-    def test_summary(self, mock_session, capsys):
+    def test_summary(self, mock_session, stdout):
         Summary(mock_session)()
-        out, _ = capsys.readouterr()
-        assert 'custom preferences found' in out
+        assert 'custom preferences found' in stdout()
         # TODO make proper summary tests
