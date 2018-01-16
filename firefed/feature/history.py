@@ -3,7 +3,7 @@ from datetime import datetime
 from attr import attrib, attrs
 
 from firefed.feature import Feature, formatter
-from firefed.output import out
+from firefed.output import out, outitem
 from firefed.util import moz_to_unix_timestamp
 
 
@@ -43,11 +43,11 @@ class History(Feature):
     def list(self):
         for entry in self.entries:
             last_visit = datetime.fromtimestamp(entry.last_visit_date)
-            out(entry.url)
-            out('    Title:      %s' % entry.title)
-            out('    Last visit: %s' % last_visit)
-            out('    Visits:     %s' % entry.visit_count)
-            out()
+            outitem(entry.url, [
+                ('Title', entry.title),
+                ('Last visit', last_visit),
+                ('Visits', entry.visit_count),
+            ])
 
     @formatter('short')
     def format_short(self):

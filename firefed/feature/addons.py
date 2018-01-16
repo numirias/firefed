@@ -3,7 +3,7 @@ from pathlib import Path
 from attr import attrib, attrs
 
 from firefed.feature import Feature, arg, formatter
-from firefed.output import bad, disabled, good, out
+from firefed.output import bad, disabled, good, out, outitem
 
 
 EXTENSIONS_FILE = 'extensions.json'
@@ -114,25 +114,19 @@ class Addons(Feature):
             self.build_format()
 
     @formatter('list', default=True)
-    def build_list(self):
+    def list(self):
         for addon in self.addons:
-            out('%s (%s) %s' % (
-                addon.name,
-                addon.id,
-                addon.enabled_markup,
-            ))
-            version = addon.version
-            out('  Version: %s' % version)
-            out('  Type:    %s' % addon.type)
-            out('  Visible: %s' % addon.visible_markup)
-            out('  Sig:     %s' % addon.signed_markup)
-            out('  Path:    %s\n' % addon.path)
-            # TODO Create list factory
-
-    # TODO Re-add table?
+            head = '%s (%s) %s' % (addon.name, addon.id, addon.enabled_markup)
+            outitem(head, [
+                ('Version', addon.version),
+                ('Type', addon.type),
+                ('Visible:', addon.visible_markup),
+                ('Sig', addon.signed_markup),
+                ('Path', addon.path),
+            ])
 
     @formatter('short')
-    def build_short(self):
+    def short(self):
         for addon in self.addons:
             out(addon.id, repr(addon.name))
 

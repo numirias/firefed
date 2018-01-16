@@ -7,7 +7,7 @@ import attr
 from attr import attrib, attrs
 
 from firefed.feature import Feature, arg, formatter
-from firefed.output import out
+from firefed.output import out, outitem
 from firefed.util import tabulate, fatal
 
 
@@ -134,10 +134,10 @@ class Logins(Feature):
     @formatter('list')
     def list(self):
         for login in self.logins:
-            out(login.host)
-            out('    Username: %s' % login.username)
-            out('    Password: %s' % login.password)
-            out()
+            outitem(login.host, [
+                ('Username', login.username),
+                ('Password', login.password),
+            ])
 
     @formatter('csv')
     def csv(self):

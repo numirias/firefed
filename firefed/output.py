@@ -34,9 +34,12 @@ def warn(text):
 
 
 def outitem(title, elems, indent=4):
+    """Output formatted as list item."""
     out(title)
-    for e in elems:
-        out('%s%s: %s' % (indent * ' ', *e))
+    max_key_len = max(len(key) for key, _ in elems) + 1
+    for key, val in elems:
+        key_spaced = ('%s:' % key).ljust(max_key_len)
+        out('%s%s %s' % (indent * ' ', key_spaced, val))
     out()
 
 

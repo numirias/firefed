@@ -476,8 +476,8 @@ class TestPreferencesFeature:
         Preferences(mock_session, check_recommended=True)()
         out, _ = capsys.readouterr()
         assert 'Reason: Disable' in out
-        assert 'Recommended: false' in nomarkup(out)
-        assert 'Recommended: "US"' in nomarkup(out)
+        assert 'Should: false' in nomarkup(out)
+        assert 'Should: "US"' in nomarkup(out)
 
     def test_recommended_from_file(self, mock_session, capsys, tmpdir):
         userjs_recommended = dedent('''
@@ -494,7 +494,7 @@ class TestPreferencesFeature:
         Preferences(mock_session, check_recommended=True,
                     recommended_source=path)()
         out, _ = capsys.readouterr()
-        assert 'Recommended: "other"' in nomarkup(out)
+        assert 'Should: "other"' in nomarkup(out)
         assert '1 bad values found.' in out
 
         Preferences(mock_session, check_recommended=True,

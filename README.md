@@ -231,11 +231,11 @@ optional arguments:
 Extract user preferences. (This doesn't include defaults.)
 
 ```
-usage: firefed preferences [-h] [-r RECOMMENDED] [-c] [-s]
+usage: firefed preferences [-h] [-r RECOMMENDED_SOURCE] [-c] [-s]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -r RECOMMENDED, --recommended RECOMMENDED
+  -r RECOMMENDED_SOURCE, --recommended RECOMMENDED_SOURCE
                         path to user.js file with recommended settings (use
                         "userjs-master" or "userjs-relaxed" to load userjs
                         config from Github)

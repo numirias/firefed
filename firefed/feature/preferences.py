@@ -13,7 +13,7 @@ pref_files = ['prefs.js', 'user.js']
 
 @attrs
 class Preference:
-
+    """A Preference entry."""
     key = attrib()
     value = attrib()
     info = attrib(default=None)
@@ -54,7 +54,7 @@ class Preferences(Feature):
     check_recommended = \
         arg('-c', '--check', action='store_true', help='check preferences for '
             'dubious settings')
-    # TODO No-override
+    # TODO No-override (Optionally show settings that are duplicates)
 
     def prepare(self):
         self.prefs = list(self.parse_prefs())
@@ -86,7 +86,7 @@ class Preferences(Feature):
                 bad_num += 1
             rec_text = markup(Preference.type_to_repr(pref_rec.value))
             outitem(pref, [
-                ('Recommended', rec_text),
+                ('Should', rec_text),
                 ('Reason', pref_rec.info)
             ])
         if bad_num == 0:
