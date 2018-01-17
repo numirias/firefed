@@ -10,6 +10,17 @@ from attr import attrib, attrs
 import firefed.__version__ as version
 
 
+CONFIG_PATH = '~/.mozilla/firefox'
+PROFILES_INI = 'profiles.ini'
+
+
+@attrs
+class Profile:
+    name = attrib()
+    path = attrib()
+    default = attrib(default=False, converter=lambda x: bool(int(x)))
+
+
 class ProfileNotFoundError(Exception):
 
     def __init__(self, name):
@@ -25,28 +36,38 @@ def fatal(text):
     raise FatalError(text)
 
 
+def mozilla_dir():
+    return Path(CONFIG_PATH).expanduser()
+
+
+def read_profiles():
+    config = ConfigParser()
+    config.read(mozilla_dir() / PROFILES_INI)
+    for section, profile in config.items():
+        if not section.startswith('Profile'):
+            continue
+        path = Path(profile.get('Path'))
+        if int(profile['IsRelative']):
+            path = Path(mozilla_dir() / path)
+        yield Profile(profile.get('Name'), path, profile.get('Default', 0))
+
+
 def profile_dir(name):
     """Return path to FF profile for a given profile name or path."""
     if name:
         possible_path = Path(name)
         if possible_path.exists():
             return possible_path
-    mozilla_dir = Path('~/.mozilla/firefox').expanduser()
-    config = ConfigParser()
-    config.read(mozilla_dir / 'profiles.ini')
-    profiles = [v for k, v in config.items() if k.startswith('Profile')]
+    profiles = list(read_profiles())
     try:
         if name:
-            profile = next(p for p in profiles if p['name'] == name)
+            profile = next(p for p in profiles if p.name == name)
         else:
-            profile = next(p for p in profiles if 'Default' in p and
-                           int(p['Default']))
+            profile = next(p for p in profiles if p.default)
+            print('found', profile)
     except StopIteration:
         raise ProfileNotFoundError(name or '(default)')
-    profile_path = Path(profile['Path'])
-    if int(profile['IsRelative']):
-        return mozilla_dir / profile_path
-    return profile_path
+    return profile.path
 
 
 def moz_datetime(ts):
@@ -76,6 +97,13 @@ def make_parser():
         description=version.__description__,
     )
     parser.add_argument(
+        '-P',
+        '--profiles',
+        help='show all local profiles',
+        action='store_true',
+        dest='show_profiles',
+    )
+    parser.add_argument(
         '-p',
         '--profile',
         help='profile name or directory',
@@ -101,10 +129,10 @@ def make_parser():
     subparsers = parser.add_subparsers(
         title='features',
         metavar='FEATURE',
-        description='You must choose a feature.',
+        description='Set the feature you want to run as positional argument. '
+        'Each feature has its own sub arguments.',
         dest='feature',
     )
-    subparsers.required = True
     for name, feature in Feature.feature_map().items():
         feature_parser = subparsers.add_parser(name,
                                                help=feature.description())

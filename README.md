@@ -23,12 +23,13 @@ pip install firefed --upgrade
 <!--usage-start-->
 ```
 $ firefed -h
-usage: firefed [-h] [-p PROFILE] [-v] [-f] FEATURE ...
+usage: firefed [-h] [-P] [-p PROFILE] [-v] [-f] FEATURE ...
 
 A tool for Firefox profile analysis, data extraction, forensics and hardening
 
 optional arguments:
   -h, --help            show this help message and exit
+  -P, --profiles        show all local profiles
   -p PROFILE, --profile PROFILE
                         profile name or directory
   -v, --verbose         verbose output (can be used multiple times)
@@ -36,12 +37,13 @@ optional arguments:
                         it doesn't look like one
 
 features:
-  You must choose a feature.
+  Set the feature you want to run as positional argument. Each feature has
+  its own sub arguments.
 
   FEATURE
     addons              List installed addons/extensions.
     bookmarks           List bookmarks.
-    cookies             Extract cookies.
+    cookies             List cookies.
     downloads           List downloaded files.
     forms               List form input history (search terms, address fields,
                         etc.).
@@ -99,19 +101,22 @@ optional arguments:
 
 ### Cookies
 
-Extract cookies.
+List cookies.
 
 ```
-usage: firefed cookies [-h] [-H HOST] [-S SESSION_FILE] [-f {list,csv}] [-s]
+usage: firefed cookies [-h] [-H HOST] [-a] [-S SESSION_FILE]
+                       [-f {setcookie,list,csv}] [-s]
 
 optional arguments:
   -h, --help            show this help message and exit
   -H HOST, --host HOST  filter by hostname (glob)
+  -a, --all             show cookies from all sources, including all available
+                        session files
   -S SESSION_FILE, --session-file SESSION_FILE
                         extract cookies from session file (you can use
                         "recovery", "previous", "sessionstore" as shortcuts
                         for default file locations)
-  -f {list,csv}, --format {list,csv}
+  -f {setcookie,list,csv}, --format {setcookie,list,csv}
                         output format
   -s, --summary         summarize results
 ```

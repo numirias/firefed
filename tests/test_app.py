@@ -1,3 +1,5 @@
+import os
+import re
 import sys
 from unittest import mock
 
@@ -5,6 +7,10 @@ import pytest
 
 from firefed.util import FatalError
 import firefed.__main__
+
+
+def nomarkup(s):
+    return re.sub(r'\x1b\[\d*m', '', s)
 
 
 class TestMain:
@@ -24,7 +30,7 @@ class TestMain:
         argv = ['firefed', '--profile', '/dev/null', 'summary']
         with pytest.raises(SystemExit) as e:
             with mock.patch.object(sys, 'argv', argv):
-                    firefed.__main__.main()
+                firefed.__main__.main()
         assert e.value.code != 0
         out, err = stdouterr()
         assert out == ''
@@ -42,3 +48,9 @@ class TestMain:
         with mock.patch.object(sys, 'argv', argv):
             firefed.__main__.main()
         assert 'Profile created' in stdout()
+
+    def test_show_profiles(self, stdout, monkeypatch, mock_home):
+        monkeypatch.setitem(os.environ, 'HOME', str(mock_home))
+        with mock.patch.object(sys, 'argv', ['firefed', '--profiles']):
+            firefed.__main__.main()
+        assert 'default [default]' in nomarkup(stdout())

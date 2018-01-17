@@ -82,7 +82,7 @@ startup_entry = {
     'hasEmbeddedWebExtension': False,
 }
 
-DEFAULT_EXT_DIR = Path('extensions') # TODO read from startup file
+DEFAULT_EXT_DIR = Path('extensions')
 ROOT_PATH = Path(sys.modules['firefed'].__file__).parent
 EXT_DB = 'extensions.json'
 ADDON_STARTUP_FILE = 'addonStartup.json.lz4'
