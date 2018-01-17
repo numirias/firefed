@@ -148,7 +148,6 @@ class FeatureHelpersMixin:
         """Return path from current profile."""
         full_path = self.session.profile / path
         if must_exist and not full_path.exists():
-            print(dir(path))
             raise FileNotFoundError(
                 errno.ENOENT,
                 os.strerror(errno.ENOENT),

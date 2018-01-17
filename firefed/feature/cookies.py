@@ -1,5 +1,6 @@
+from collections import defaultdict
+from datetime import datetime, timezone
 from fnmatch import fnmatch
-import json
 from pathlib import Path
 
 from attr import attrib, attrs
@@ -9,15 +10,17 @@ from firefed.output import out
 from firefed.util import fatal
 
 
-@attrs
+@attrs(hash=True)
 class Cookie:
 
     name = attrib()
     value = attrib()
     host = attrib()
     path = attrib(default=None)
-    secure = attrib(default=None)
-    http_only = attrib(default=None)
+    expiry = attrib(default=None)
+    secure = attrib(default=None, converter=bool)
+    http_only = attrib(default=None, converter=bool)
+    same_site = attrib(default=None, converter=bool)
 
     def __str__(self):
         # Re-assemble cookies based roughly on the 'Set-Cookie' format
@@ -28,6 +31,16 @@ class Cookie:
             s += '; Secure'
         if self.http_only:
             s += '; HttpOnly'
+        if self.same_site:
+            s += '; SameSite=%s' % ('lax' if self.same_site == 1 else 'strict')
+        if self.expiry:
+            try:
+                date = datetime.fromtimestamp(self.expiry, tz=timezone.utc). \
+                    strftime('%a, %d %b %Y %H:%M:%S %Z').replace('UTC', 'GMT')
+            except ValueError:
+                pass
+            else:
+                s += '; Expires=%s' % date
         if self.path and self.path != '/':
             s += '; Path=%s' % self.path
         return s
@@ -40,6 +53,7 @@ column_map = {
     'path': 'path',
     'isSecure': 'secure',
     'isHttpOnly': 'http_only',
+    'sameSite': 'same_site',
 }
 
 session_file_map = {
@@ -58,38 +72,54 @@ def session_file_type(key_or_path):
 
 @attrs
 class Cookies(Feature):
-    """Extract cookies."""
+    """List cookies.
 
-    host = arg('-H', '--host', help='filter by hostname (glob)')
-    session_file = arg('-S', '--session-file', type=session_file_type,
-                       help='extract cookies from session file (you can use %s'
-                       ' as shortcuts for default file locations)' %
-                       ', '.join('"%s"' % s for s in session_file_map))
+    Don't find a cookie you have definitely set? Not all cookies are
+    immediately written to the cookie store. You possibly need to close the
+    browser first to force all cookies being written to disk.
+    """
+    host = \
+        arg('-H', '--host', help='filter by hostname (glob)')
+    want_all_sources = \
+        arg('-a', '--all', action='store_true', help='show cookies from all '
+            'sources, including all available session files')
+    session_file = \
+        arg('-S', '--session-file', type=session_file_type, help='extract '
+            'cookies from session file (you can use %s as shortcuts for '
+            'default file locations)' % ', '.join('"%s"' % s for s in
+                                                  session_file_map))
 
     def prepare(self):
-        if self.session_file:
+        cookies = set()
+        if self.want_all_sources:
+            for source in session_file_map.values():
+                try:
+                    cookies |= set(self.load_ss_cookies(source))
+                except FileNotFoundError:
+                    pass
+        elif self.session_file:
             try:
-                cookies = self.load_ss_cookies(self.session_file)
+                cookies |= set(self.load_ss_cookies(self.session_file))
             except FileNotFoundError as e:
                 fatal('Session file "%s" not found.' % e.filename)
-        else:
-            cookies = self.load_sqlite(
+        if not self.session_file:
+            cookies |= set(self.load_sqlite(
                 db='cookies.sqlite',
                 table='moz_cookies',
                 cls=Cookie,
                 column_map=column_map
-            )
+            ))
         if self.host:
             cookies = [c for c in cookies if fnmatch(c.host, self.host)]
-        self.cookies = cookies
+        self.cookies = list(cookies)
 
     def load_ss_cookies(self, path):
-        data = json.loads(self.load_mozlz4(path))
+        data = self.load_json_mozlz4(path)
         cookies = data['cookies']
         return [Cookie(
-            host=cookie['host'],
-            name=cookie['name'],
-            value=cookie['value'],
+            host=cookie.get('host', ''),
+            name=cookie.get('name', ''),
+            value=cookie.get('value', ''),
             path=cookie.get('path', None),
             secure=cookie.get('secure', False),
             http_only=cookie.get('httponly', False),
@@ -101,10 +131,21 @@ class Cookies(Feature):
     def summarize(self):
         out('%d cookies found.' % len(list(self.cookies)))
 
-    @formatter('list', default=True)
-    def format_list(self):
+    @formatter('setcookie', default=True)
+    def format_setcookie(self):
         for cookie in self.cookies:
             out(cookie)
+
+    @formatter('list')
+    def format_list(self):
+        host_map = defaultdict(list)
+        for cookie in self.cookies:
+            host_map[cookie.host].append(cookie)
+        for host, cookies in host_map.items():
+            out(host)
+            for cookie in cookies:
+                out('    %s = %s' % (cookie.name, cookie.value))
+            out()
 
     @formatter('csv')
     def format_csv(self):

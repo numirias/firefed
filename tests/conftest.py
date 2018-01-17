@@ -103,9 +103,9 @@ def make_cookies_sqlite(profile_dir):
     con = sqlite3.connect(str(path))
     cursor = con.cursor()
     cursor.executescript('''
-    CREATE TABLE moz_cookies (name, value, host, path, isSecure, isHttpOnly);
-    INSERT INTO moz_cookies VALUES('k1', 'v1', 'one.example', '/', 1, 0);
-    INSERT INTO moz_cookies VALUES('k2', 'v2', 'two.example', '/p2', 0, 1);
+    CREATE TABLE moz_cookies (name, value, host, path, isSecure, isHttpOnly, sameSite, expiry);
+    INSERT INTO moz_cookies VALUES('k1', 'v1', 'one.example', '/', 1, 0, 0, 1000);
+    INSERT INTO moz_cookies VALUES('k2', 'v2', 'two.example', '/p2', 0, 1, 1, 449410533679);
     ''')
 
 @profile_file

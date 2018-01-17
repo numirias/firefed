@@ -162,7 +162,8 @@ class TestFeature:
             if 'csv' in Feature_.formatters():
                 kwargs = {'password': 'master'} if Feature_ is Logins else {}
                 Feature_(mock_session, format='csv', **kwargs)()
-                parse_csv(stdout())
+                res = parse_csv(stdout())
+                assert len(set(len(row) for row in res)) == 1
 
 
 class TestFeatureHelpers:
@@ -304,17 +305,25 @@ class TestCookiesFeature:
         assert all(x in str(cookie).lower() for x in ['foo=bar', 'path=/baz',
                    'secure', 'httponly', 'domain=one.example'])
 
+    def test_setcookie(self, mock_session, stdout):
+        feature = Cookies(mock_session, format='setcookie')
+        feature()
+        assert any(line.startswith('k1=v1') for line in stdout().split('\n'))
+        assert len(feature.cookies) == 2
+
+        Cookies(mock_session, host='tw*.example', format='setcookie')()
+        assert stdout().startswith('k2=v2')
+
     def test_list(self, mock_session, stdout):
         Cookies(mock_session, format='list')()
-        assert any(line.startswith('k1=v1') for line in stdout().split('\n'))
-
-        Cookies(mock_session, host='tw*.example', format='list')()
-        assert stdout().startswith('k2=v2')
+        lines = stdout().split('\n')
+        assert 'one.example' in lines
+        assert '    k1 = v1' in lines
 
     def test_csv(self, mock_session, stdout):
         Cookies(mock_session, format='csv')()
-        data = parse_csv(stdout())
-        assert ['k1', 'v1', 'one.example', '/', '1', '0'] in data
+        assert ['k1', 'v1', 'one.example', '/', '1000', 'True', 'False',
+                'False'] in parse_csv(stdout())
 
     def test_sessionstore(self, mock_session):
         file = session_file_type('sessionstore')
@@ -328,6 +337,11 @@ class TestCookiesFeature:
     def test_sessionstore_missing_file(self, mock_session):
         with pytest.raises(FatalError, match='not found'):
             Cookies(mock_session, session_file='nonexistent', format='list')()
+
+    def test_all_sources(self, mock_session):
+        feature = Cookies(mock_session, want_all_sources=True, format='list')
+        feature()
+        assert len(feature.cookies) == 4
 
 
 class TestBookmarksFeature:
