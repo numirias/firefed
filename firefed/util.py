@@ -106,7 +106,7 @@ def make_parser():
     parser.add_argument(
         '-p',
         '--profile',
-        help='profile name or directory',
+        help='profile name or directory to be used when running a feature',
         type=profile_dir_type,
         default='',
     )
@@ -121,7 +121,7 @@ def make_parser():
     parser.add_argument(
         '-f',
         '--force',
-        help='force treating target as a profile directory even if it doesn\'t'
+        help='treat target as a profile directory even if it doesn\'t'
              ' look like one',
         action='store_true',
         default=False,
