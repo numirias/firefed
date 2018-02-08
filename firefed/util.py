@@ -64,7 +64,6 @@ def profile_dir(name):
             profile = next(p for p in profiles if p.name == name)
         else:
             profile = next(p for p in profiles if p.default)
-            print('found', profile)
     except StopIteration:
         raise ProfileNotFoundError(name or '(default)')
     return profile.path
