@@ -67,6 +67,7 @@ features:
 
 List installed addons/extensions.
 
+
 ```
 usage: firefed addons [-h] [-a] [-A] [-S] [-f {list,short,csv}] [-s]
 
@@ -87,6 +88,7 @@ optional arguments:
 
 List bookmarks.
 
+
 ```
 usage: firefed bookmarks [-h] [-f {tree,list,csv}] [-s]
 
@@ -100,6 +102,11 @@ optional arguments:
 ### Cookies
 
 List cookies.
+
+Don't find a cookie you have definitely set? Not all cookies are
+immediately written to the cookie store. You possibly need to close the
+browser first to force all cookies being written to disk.
+
 
 ```
 usage: firefed cookies [-h] [-H HOST] [-a] [-S SESSION_FILE]
@@ -123,6 +130,7 @@ optional arguments:
 
 List downloaded files.
 
+
 ```
 usage: firefed downloads [-h] [-s]
 
@@ -135,6 +143,9 @@ optional arguments:
 
 List form input history (search terms, address fields, etc.).
 
+Searches in the browser's searchbar have the key "searchar-history".
+
+
 ```
 usage: firefed forms [-h] [-s]
 
@@ -146,6 +157,7 @@ optional arguments:
 ### History
 
 List history.
+
 
 ```
 usage: firefed history [-h] [-f {list,short,csv}] [-s]
@@ -161,6 +173,7 @@ optional arguments:
 
 List known hosts.
 
+
 ```
 usage: firefed hosts [-h] [-s]
 
@@ -172,6 +185,14 @@ optional arguments:
 ### Infect
 
 Install a PoC reverse shell via a hidden extension.
+
+This is highly experimental and only a proof of concept. Also note the
+extension currently isn't actually hidden and disappears with the next
+browser restart.
+
+The reverse shell will attempt to connect to `localhost:8123` and provides
+a JS REPL with system principal privileges.
+
 
 ```
 usage: firefed infect [-h] [-u] [-c] [-y]
@@ -187,6 +208,7 @@ optional arguments:
 
 List history of urlbar inputs (typed URLs).
 
+
 ```
 usage: firefed inputhistory [-h] [-s]
 
@@ -198,6 +220,10 @@ optional arguments:
 ### Logins
 
 List saved logins.
+
+You can provide a valid master password, but firefed doesn't (yet) support
+cracking an unkown password.
+
 
 ```
 usage: firefed logins [-h] [-l LIBNSS] [-p PASSWORD] [-f {table,list,csv}]
@@ -219,6 +245,10 @@ optional arguments:
 
 List host permissions (e.g. location sharing).
 
+This feature extracts the stored permissions which the user has granted to
+particular hosts (e.g. popups, location sharing, desktop notifications).
+
+
 ```
 usage: firefed permissions [-h] [-f {table,csv}] [-s]
 
@@ -232,6 +262,11 @@ optional arguments:
 ### Preferences
 
 List user preferences.
+
+This feature reads the preferences from `prefs.js` and `user.js`.
+Unfortunately, we can't extract any default values since these aren't
+stored in the profile.
+
 
 ```
 usage: firefed preferences [-h] [-d] [-c] [-S PATH] [-b] [-i] [-s]
@@ -258,6 +293,7 @@ optional arguments:
 
 Summarize results of all (summarizable) features.
 
+
 ```
 usage: firefed summary [-h]
 
@@ -268,6 +304,11 @@ optional arguments:
 ### Visits
 
 List history of visited URLs.
+
+This is different from the `history` feature because it lists a single
+entry with a timestamp for each individual visit, even if the URL is the
+same.
+
 
 ```
 usage: firefed visits [-h] [-f {list,csv}] [-s]

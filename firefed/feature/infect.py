@@ -97,7 +97,7 @@ class Infect(Feature):
     browser restart.
 
     The reverse shell will attempt to connect to `localhost:8123` and provides
-    a JS REPL with full privileges.
+    a JS REPL with system principal privileges.
     """
 
     want_uninstall = arg('-u', '--uninstall', help='uninstall malicious addon',

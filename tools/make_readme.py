@@ -5,6 +5,7 @@ This tool writes the help texts to the README.
 
 from pathlib import Path
 import sys
+from textwrap import dedent
 
 sys.path.insert(0, str(Path(__file__).parents[1] / '../firefed'))  # noqa: E402
 from firefed.util import make_parser
@@ -37,9 +38,11 @@ def main():
     features_text = ''
     for name, cmd in sub_cmds.items():
         feature = features[name]
+        ds_parts = feature.__doc__.split('\n')
+        ds = ds_parts[0] + '\n' + dedent('\n'.join(ds_parts[1:]))
         features_text += features_stub.format(
             name=feature.__name__,
-            description=feature.description(),
+            description=ds,
             help=cmd.format_help(),
         )
 
