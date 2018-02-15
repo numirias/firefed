@@ -14,7 +14,11 @@ def run():
     if feature_name is None:
         # Show help message end exit
         parser.parse_args(['-h'])
-    session = Session(args.pop('profile'), verbosity=args.pop('verbosity'))
+    try:
+        profile = util.profile_dir(args.pop('profile'))
+    except util.ProfileNotFoundError as e:
+        fatal(e)
+    session = Session(profile, verbosity=args.pop('verbosity'))
     ChosenFeature = Feature.feature_map()[feature_name]
     force = args.pop('force')
     feature = ChosenFeature(session, **args)

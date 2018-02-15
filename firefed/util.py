@@ -24,7 +24,11 @@ class Profile:
 class ProfileNotFoundError(Exception):
 
     def __init__(self, name):
-        super().__init__('Profile "%s" not found.' % name)
+        if name is None:
+            text = 'No default profile found. Use --profile to specify one.'
+        else:
+            text = 'Profile "%s" not found.' % name
+        super().__init__(text)
 
 
 class FatalError(Exception):
@@ -65,7 +69,7 @@ def profile_dir(name):
         else:
             profile = next(p for p in profiles if p.default)
     except StopIteration:
-        raise ProfileNotFoundError(name or '(default)')
+        raise ProfileNotFoundError(name)
     return profile.path
 
 
@@ -80,13 +84,6 @@ def moz_to_unix_timestamp(ts):
         return ts // 1000000
     except TypeError:
         return 0
-
-
-def profile_dir_type(dirname):
-    try:
-        return profile_dir(dirname)
-    except ProfileNotFoundError as e:
-        raise argparse.ArgumentTypeError(e)
 
 
 def make_parser():
@@ -106,8 +103,6 @@ def make_parser():
         '-p',
         '--profile',
         help='profile name or directory to be used when running a feature',
-        type=profile_dir_type,
-        default='',
     )
     parser.add_argument(
         '-v',

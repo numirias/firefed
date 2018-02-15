@@ -15,7 +15,6 @@ def nomarkup(s):
 
 class TestMain:
 
-    @pytest.mark.xfail # TODO
     def test_main(self, stdout):
         with pytest.raises(SystemExit) as e:
             with mock.patch.object(sys, 'argv', ['firefed']):
