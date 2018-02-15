@@ -7,7 +7,7 @@
 
 Firefed is a command-line tool to inspect Firefox profiles. It can extract saved passwords, preferences, addons, history and more. You may use it for forensic analysis, to audit your config for insecure settings or just to quickly extract some data without starting up the browser.
 
-(Note that Firefed is currently under development and not all features work seamlessly yet.)
+Note that Firefed is a **work in progress** and not all features work seamlessly yet -- but you're welcome to contribute.
 
 
 ## Installation
@@ -31,14 +31,15 @@ optional arguments:
   -h, --help            show this help message and exit
   -P, --profiles        show all local profiles
   -p PROFILE, --profile PROFILE
-                        profile name or directory
+                        profile name or directory to be used when running a
+                        feature
   -v, --verbose         verbose output (can be used multiple times)
-  -f, --force           force treating target as a profile directory even if
-                        it doesn't look like one
+  -f, --force           treat target as a profile directory even if it doesn't
+                        look like one
 
 features:
   Set the feature you want to run as positional argument. Each feature has
-  its own sub arguments.
+  its own sub arguments which can be listed with `firefed <feature> -h`.
 
   FEATURE
     addons              List installed addons/extensions.
@@ -47,18 +48,15 @@ features:
     downloads           List downloaded files.
     forms               List form input history (search terms, address fields,
                         etc.).
-    history             Extract history.
+    history             List history.
     hosts               List known hosts.
     infect              Install a PoC reverse shell via a hidden extension.
     inputhistory        List history of urlbar inputs (typed URLs).
-    logins              Extract saved logins.
-    permissions         Extract permissions granted to particular hosts (e.g.
-                        location sharing).
-    preferences         Extract user preferences. (This doesn't include
-                        defaults.)
-    summary             Summarize results of all features (that can be
-                        summarized).
-    visits              Extract history of visited URLs.
+    logins              List saved logins.
+    permissions         List host permissions (e.g. location sharing).
+    preferences         List user preferences.
+    summary             Summarize results of all (summarizable) features.
+    visits              List history of visited URLs.
 ```
 <!--usage-end-->
 
@@ -147,7 +145,7 @@ optional arguments:
 
 ### History
 
-Extract history.
+List history.
 
 ```
 usage: firefed history [-h] [-f {list,short,csv}] [-s]
@@ -199,7 +197,7 @@ optional arguments:
 
 ### Logins
 
-Extract saved logins.
+List saved logins.
 
 ```
 usage: firefed logins [-h] [-l LIBNSS] [-p PASSWORD] [-f {table,list,csv}]
@@ -219,7 +217,7 @@ optional arguments:
 
 ### Permissions
 
-Extract permissions granted to particular hosts (e.g. location sharing).
+List host permissions (e.g. location sharing).
 
 ```
 usage: firefed permissions [-h] [-f {table,csv}] [-s]
@@ -233,7 +231,7 @@ optional arguments:
 
 ### Preferences
 
-Extract user preferences. (This doesn't include defaults.)
+List user preferences.
 
 ```
 usage: firefed preferences [-h] [-d] [-c] [-S PATH] [-b] [-i] [-s]
@@ -258,7 +256,7 @@ optional arguments:
 
 ### Summary
 
-Summarize results of all features (that can be summarized).
+Summarize results of all (summarizable) features.
 
 ```
 usage: firefed summary [-h]
@@ -269,7 +267,7 @@ optional arguments:
 
 ### Visits
 
-Extract history of visited URLs.
+List history of visited URLs.
 
 ```
 usage: firefed visits [-h] [-f {list,csv}] [-s]

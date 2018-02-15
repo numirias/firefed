@@ -18,7 +18,12 @@ class Visit:
 
 @attrs
 class Visits(Feature):
-    """Extract history of visited URLs."""
+    """List history of visited URLs.
+    
+    This is different from the `history` feature because it lists a single
+    entry with a timestamp for each individual visit, even if the URL is the
+    same.
+    """
 
     def prepare(self):
         visits = list(self.load_sqlite(

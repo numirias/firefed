@@ -87,7 +87,11 @@ class Login:
 
 @attrs
 class Logins(Feature):
-    """Extract saved logins."""
+    """List saved logins.
+
+    You can provide a valid master password, but firefed doesn't (yet) support
+    cracking an unkown password.
+    """
 
     libnss = arg('-l', '--libnss', default='libnss3.so',
                  help='path to libnss3')

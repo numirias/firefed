@@ -8,7 +8,7 @@ from firefed.util import tabulate
 
 @attrs
 class Permissions(Feature):
-    """Extract permissions granted to particular hosts (e.g. location sharing).
+    """List host permissions (e.g. location sharing).
 
     This feature extracts the stored permissions which the user has granted to
     particular hosts (e.g. popups, location sharing, desktop notifications).

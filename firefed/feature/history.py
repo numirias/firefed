@@ -18,7 +18,7 @@ class HistoryEntry:
 
 @attrs
 class History(Feature):
-    """Extract history."""
+    """List history."""
 
     entries = attrib(default=None, init=False)
 

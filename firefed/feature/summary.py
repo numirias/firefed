@@ -8,7 +8,7 @@ from firefed.output import out
 
 @attrs
 class Summary(Feature):
-    """Summarize results of all features (that can be summarized)."""
+    """Summarize results of all (summarizable) features."""
 
     def creation_date(self):
         data = self.load_json('times.json')

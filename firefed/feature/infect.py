@@ -90,7 +90,15 @@ ADDON_STARTUP_FILE = 'addonStartup.json.lz4'
 
 @attrs
 class Infect(Feature):
-    """Install a PoC reverse shell via a hidden extension."""
+    """Install a PoC reverse shell via a hidden extension.
+
+    This is highly experimental and only a proof of concept. Also note the
+    extension currently isn't actually hidden and disappears with the next
+    browser restart.
+
+    The reverse shell will attempt to connect to `localhost:8123` and provides
+    a JS REPL with full privileges.
+    """
 
     want_uninstall = arg('-u', '--uninstall', help='uninstall malicious addon',
                          action='store_true', default=False)

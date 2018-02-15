@@ -129,7 +129,8 @@ def make_parser():
         title='features',
         metavar='FEATURE',
         description='Set the feature you want to run as positional argument. '
-        'Each feature has its own sub arguments.',
+        'Each feature has its own sub arguments which can be listed with '
+        '`firefed <feature> -h`.',
         dest='feature',
     )
     for name, feature in Feature.feature_map().items():

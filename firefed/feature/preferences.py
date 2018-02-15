@@ -44,9 +44,11 @@ class Preference:
 
 @attrs
 class Preferences(Feature):
-    """Extract user preferences. (This doesn't include defaults.)
+    """List user preferences.
 
-    This feature reads the preferences from "prefs.js" and "user.js".
+    This feature reads the preferences from `prefs.js` and `user.js`.
+    Unfortunately, we can't extract any default values since these aren't
+    stored in the profile.
     """
     allow_duplicates = \
         arg('-d', '--duplicates', action='store_true', help='show all '
