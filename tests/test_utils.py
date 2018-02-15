@@ -1,12 +1,10 @@
-import argparse
 from datetime import datetime
 import os
 
 import pytest
 
 from firefed.util import (ProfileNotFoundError, make_parser, moz_datetime,
-                          moz_to_unix_timestamp, profile_dir, profile_dir_type,
-                          tabulate)
+                          moz_to_unix_timestamp, profile_dir, tabulate)
 
 
 class TestUtils:
@@ -22,10 +20,6 @@ class TestUtils:
         assert profile_dir('user2') == config_path / 'random.user2'
         with pytest.raises(ProfileNotFoundError):
             profile_dir('nonexistent')
-
-        assert profile_dir('default') == profile_dir_type('default')
-        with pytest.raises(argparse.ArgumentTypeError):
-            profile_dir_type('nonexistent')
 
     def test_argparse(self, stdout, mock_profile):
         parser = make_parser()
