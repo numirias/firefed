@@ -19,7 +19,7 @@ class Visit:
 @attrs
 class Visits(Feature):
     """List history of visited URLs.
-    
+
     This is different from the `history` feature because it lists a single
     entry with a timestamp for each individual visit, even if the URL is the
     same.
