@@ -141,11 +141,6 @@ def make_parser():
     return parser
 
 
-def parse_args():
-    parser = make_parser()
-    return vars(parser.parse_args())
-
-
 @attrs
 class Tabulate:
 

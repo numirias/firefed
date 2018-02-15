@@ -5,12 +5,17 @@ from firefed.util import fatal, read_profiles
 
 
 def run():
-    args = util.parse_args()
+    parser = util.make_parser()
+    args = vars(parser.parse_args())
     if args.pop('show_profiles'):
         show_profiles()
         return
+    feature_name = args.pop('feature')
+    if feature_name is None:
+        # Show help message end exit
+        parser.parse_args(['-h'])
     session = Session(args.pop('profile'), verbosity=args.pop('verbosity'))
-    ChosenFeature = Feature.feature_map()[args.pop('feature')]
+    ChosenFeature = Feature.feature_map()[feature_name]
     force = args.pop('force')
     feature = ChosenFeature(session, **args)
     if not feature.profile_path('times.json').exists() and not force:

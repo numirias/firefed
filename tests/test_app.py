@@ -15,10 +15,12 @@ def nomarkup(s):
 
 class TestMain:
 
-    def test_main(self):
+    def test_main(self, stdout):
         with pytest.raises(SystemExit) as e:
-            firefed.__main__.main()
-        assert e.value.code == 2
+            with mock.patch.object(sys, 'argv', ['firefed']):
+                firefed.__main__.main()
+        assert e.value.code == 0
+        assert stdout().startswith('usage:')
 
     def test_run_on_bad_profile(self):
         argv = ['firefed', '--profile', '/dev/null', 'summary']
