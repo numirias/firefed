@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from fnmatch import fnmatch
 from pathlib import Path
+import sqlite3
 
 from attr import attrib, attrs
 
@@ -103,15 +104,30 @@ class Cookies(Feature):
             except FileNotFoundError as e:
                 fatal('Session file "%s" not found.' % e.filename)
         if not self.session_file:
-            cookies |= set(self.load_sqlite(
-                db='cookies.sqlite',
-                table='moz_cookies',
-                cls=Cookie,
-                column_map=column_map
-            ))
+            try:
+                db_cookies = self.load_sqlite_cookies(column_map)
+            except sqlite3.OperationalError as e:
+                if str(e) == 'no such column: sameSite':
+                    new_map = column_map.copy()
+                    del new_map['sameSite']
+                    # XXX This is a bit of a hack to handle a missing sameSite
+                    # column. Should be cleaned up.
+                    new_map['null'] = 'same_site'
+                    db_cookies = self.load_sqlite_cookies(new_map)
+                else:
+                    raise
+            cookies |= set(db_cookies)
         if self.host:
             cookies = [c for c in cookies if fnmatch(c.host, self.host)]
         self.cookies = list(cookies)
+
+    def load_sqlite_cookies(self, column_map):
+        return self.load_sqlite(
+            db='cookies.sqlite',
+            table='moz_cookies',
+            cls=Cookie,
+            column_map=column_map
+        )
 
     def load_ss_cookies(self, path):
         data = self.load_json_mozlz4(path)

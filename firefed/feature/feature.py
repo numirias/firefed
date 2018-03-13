@@ -26,7 +26,7 @@ def arg(*args, **kwargs):
 
     >>> @attrs
     ... class MyFeature(Feature):
-    ...     my_number = arg('-n', '--number' default=3)
+    ...     my_number = arg('-n', '--number', default=3)
     ...     def run(self):
     ...         print('Your number:', self.my_number)
 
