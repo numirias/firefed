@@ -11,6 +11,7 @@ colorama = "*"
 "lz4" = "*"
 requests = "*"
 attrs = ">=17.4"
+"flake8" = "*"
 
 
 [dev-packages]
