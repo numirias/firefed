@@ -101,7 +101,8 @@ class FeatureHelpersMixin:
 
     def load_json(self, path):
         """Load a JSON file from the user profile."""
-        with open(self.profile_path(path, must_exist=True), encoding='utf-8') as f:
+        with open(self.profile_path(path, must_exist=True),
+                  encoding='utf-8') as f:
             data = json.load(f)
         return data
 
