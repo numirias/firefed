@@ -120,7 +120,7 @@ class Addons(Feature):
             outitem(head, [
                 ('Version', addon.version),
                 ('Type', addon.type),
-                ('Visible:', addon.visible_markup),
+                ('Visible', addon.visible_markup),
                 ('Sig', addon.signed_markup),
                 ('Path', addon.path),
             ])

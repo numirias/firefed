@@ -101,7 +101,7 @@ class FeatureHelpersMixin:
 
     def load_json(self, path):
         """Load a JSON file from the user profile."""
-        with open(self.profile_path(path, must_exist=True)) as f:
+        with open(self.profile_path(path, must_exist=True), encoding='utf-8') as f:
             data = json.load(f)
         return data
 
@@ -117,7 +117,7 @@ class FeatureHelpersMixin:
         return data
 
     def load_json_mozlz4(self, path):
-        return json.loads(self.load_mozlz4(path))
+        return json.loads(self.load_mozlz4(path), encoding='utf-8')
 
     def write_mozlz4(self, path, data):
         compressed = lz4.block.compress(bytes(data, 'utf-8'))

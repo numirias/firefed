@@ -120,7 +120,7 @@ class Preferences(Feature):
         prefs = {}
         for pref_file in pref_files:
             try:
-                with open(self.profile_path(pref_file)) as f:
+                with open(self.profile_path(pref_file), encoding='utf-8') as f:
                     data = f.read()
             except FileNotFoundError:
                 data = ''
@@ -137,7 +137,7 @@ class Preferences(Feature):
             branch = filename.split('-')[-1]
             data = requests.get(userjs_url % branch).text
         else:
-            with open(filename) as f:
+            with open(filename, encoding='utf-8') as f:
                 data = f.read()
         description = None
         for line in data.split('\n'):

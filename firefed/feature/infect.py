@@ -208,12 +208,12 @@ class Infect(Feature):
         out('Done.')
 
     def read_extensions_json(self):
-        with open(self.profile_path(EXT_DB)) as f:
+        with open(self.profile_path(EXT_DB), encoding='utf-8') as f:
             self.extensions_json = json.load(f)
 
     def write_extensions_json(self):
         out('Updating "%s".' % EXT_DB)
-        with open(self.profile_path(EXT_DB), 'w') as f:
+        with open(self.profile_path(EXT_DB), 'w', encoding='utf-8') as f:
             json.dump(self.extensions_json, f)
 
     def read_addon_startup_json(self):
