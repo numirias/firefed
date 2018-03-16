@@ -46,7 +46,7 @@ def mozilla_dir():
 
 def read_profiles():
     config = ConfigParser()
-    config.read(mozilla_dir() / PROFILES_INI)
+    config.read(str(mozilla_dir() / PROFILES_INI))
     for section, profile in config.items():
         if not section.startswith('Profile'):
             continue
