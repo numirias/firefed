@@ -6,7 +6,7 @@ from firefed.output import error, out, good, warn
 from firefed.util import fatal, read_profiles, mozilla_dir
 
 
-MIN_PYTHON_VERSION = (3, 6, 4)
+MIN_PYTHON_VERSION = (3, 6, 3)
 
 
 def run():
