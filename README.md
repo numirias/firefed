@@ -23,12 +23,13 @@ pip install firefed --upgrade
 <!--usage-start-->
 ```
 $ firefed -h
-usage: firefed [-h] [-P] [-p PROFILE] [-v] [-f] FEATURE ...
+usage: firefed [-h] [-V] [-P] [-p PROFILE] [-v] [-f] FEATURE ...
 
 A tool for Firefox profile analysis, data extraction, forensics and hardening
 
 optional arguments:
   -h, --help            show this help message and exit
+  -V, --version         show program's version number and exit
   -P, --profiles        show all local profiles
   -p PROFILE, --profile PROFILE
                         profile name or directory to be used when running a
