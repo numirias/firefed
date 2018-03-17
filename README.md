@@ -7,7 +7,7 @@
 
 Firefed is a command-line tool to inspect Firefox profiles. It can extract saved passwords, preferences, addons, history and more. You may use it for forensic analysis, to audit your config for insecure settings or just to quickly extract some data without starting up the browser.
 
-Note that Firefed is a **work in progress** and not all features work seamlessly yet -- but you're welcome to contribute.
+Note that Firefed is a work in progress and not all features work seamlessly yet -- but you're more than welcome to contribute, e.g. with bug reports and usage feedback.
 
 
 ## Installation

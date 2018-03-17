@@ -1,7 +1,7 @@
 from firefed import Session, util
 from firefed.feature import Feature
 from firefed.output import error, out, good
-from firefed.util import fatal, read_profiles
+from firefed.util import fatal, read_profiles, mozilla_dir
 
 
 def run():
@@ -31,7 +31,7 @@ def run():
 def show_profiles():
     profiles = list(read_profiles())
     if not profiles:
-        out('No local profiles found.')
+        out('No local profiles found in "%s".' % mozilla_dir())
         return
     out('%d profiles found:' % len(profiles))
     for profile in profiles:

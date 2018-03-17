@@ -4,13 +4,15 @@ from datetime import datetime
 from itertools import chain
 from pathlib import Path
 import re
+import sys
 
 from attr import attrib, attrs
 
 import firefed.__version__ as version
 
 
-CONFIG_PATH = '~/.mozilla/firefox'
+LINUX_PROFILES_PATH = '~/.mozilla/firefox'
+OSX_PROFILES_PATH = '~/Library/Application Support/Firefox/Profiles'
 PROFILES_INI = 'profiles.ini'
 
 
@@ -41,7 +43,12 @@ def fatal(text):
 
 
 def mozilla_dir():
-    return Path(CONFIG_PATH).expanduser()
+    if sys.platform == 'darwin':
+        profiles_path = OSX_PROFILES_PATH
+    else:
+        # For now, we assume that other OSes follow the Linux convention
+        profiles_path = LINUX_PROFILES_PATH
+    return Path(profiles_path).expanduser()
 
 
 def read_profiles():
