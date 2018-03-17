@@ -1,7 +1,12 @@
+import sys
+
 from firefed import Session, util
 from firefed.feature import Feature
-from firefed.output import error, out, good
+from firefed.output import error, out, good, warn
 from firefed.util import fatal, read_profiles, mozilla_dir
+
+
+MIN_PYTHON_VERSION = (3, 6, 4)
 
 
 def run():
@@ -43,6 +48,9 @@ def show_profiles():
 
 
 def main():
+    if sys.version_info < MIN_PYTHON_VERSION:
+        warn('Python < %d.%d.%d is unsupported. You\'re running %d.%d.%d.' %
+             (MIN_PYTHON_VERSION + sys.version_info[:3]))
     try:
         run()
     except util.FatalError as e:
