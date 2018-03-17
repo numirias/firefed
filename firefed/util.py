@@ -100,6 +100,12 @@ def make_parser():
         description=version.__description__,
     )
     parser.add_argument(
+        '-V',
+        '--version',
+        action='version',
+        version='%(prog)s v' + version.__version__,
+    )
+    parser.add_argument(
         '-P',
         '--profiles',
         help='show all local profiles',
