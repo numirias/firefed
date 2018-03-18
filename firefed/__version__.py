@@ -1,5 +1,5 @@
 __title__ = 'firefed'
-__version__ = '0.1.12'
+__version__ = '0.1.13'
 __description__ = 'A tool for Firefox profile analysis, data extraction, \
 forensics and hardening'
 __url__ = 'https://github.com/numirias/firefed'

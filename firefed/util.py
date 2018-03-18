@@ -4,15 +4,19 @@ from datetime import datetime
 from itertools import chain
 from pathlib import Path
 import re
-import sys
 
 from attr import attrib, attrs
 
 import firefed.__version__ as version
 
 
-LINUX_PROFILES_PATH = '~/.mozilla/firefox'
-OSX_PROFILES_PATH = '~/Library/Application Support/Firefox/Profiles'
+PROFILES_INI_PATHS = [
+    '~/.mozilla/firefox',
+    '~/Library/Application Support/Firefox',
+    '~/Library/Mozilla/Firefox',
+    '~/Library/Application Support/Firefox/Profiles',
+    '~/Library/Mozilla/Firefox/Profiles',
+]
 PROFILES_INI = 'profiles.ini'
 
 
@@ -27,7 +31,7 @@ class ProfileNotFoundError(Exception):
 
     def __init__(self, name):
         if name is None:
-            text = 'No default profile found. Use --profile to specify one.'
+            text = 'No default profile found. Use -p/--profile to specify one.'
         else:
             text = 'Profile "%s" not found.' % name
         super().__init__(text)
@@ -43,23 +47,23 @@ def fatal(text):
 
 
 def mozilla_dir():
-    if sys.platform == 'darwin':
-        profiles_path = OSX_PROFILES_PATH
-    else:
-        # For now, we assume that other OSes follow the Linux convention
-        profiles_path = LINUX_PROFILES_PATH
-    return Path(profiles_path).expanduser()
+    for root in PROFILES_INI_PATHS:
+        path = Path(root).expanduser()
+        if (path / PROFILES_INI).exists():
+            return path
+    raise FatalError('Couldn\'t find profiles.ini to read local profiles.')
 
 
 def read_profiles():
+    root = mozilla_dir()
     config = ConfigParser()
-    config.read(str(mozilla_dir() / PROFILES_INI))
+    config.read(str(root / PROFILES_INI))
     for section, profile in config.items():
         if not section.startswith('Profile'):
             continue
         path = Path(profile.get('Path'))
         if int(profile['IsRelative']):
-            path = Path(mozilla_dir() / path)
+            path = Path(root / path)
         yield Profile(profile.get('Name'), path, profile.get('Default', 0))
 
 

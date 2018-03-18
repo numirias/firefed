@@ -3,7 +3,7 @@ import sys
 from firefed import Session, util
 from firefed.feature import Feature
 from firefed.output import error, out, good, warn
-from firefed.util import fatal, read_profiles, mozilla_dir
+from firefed.util import fatal, read_profiles
 
 
 MIN_PYTHON_VERSION = (3, 6, 3)
@@ -36,7 +36,7 @@ def run():
 def show_profiles():
     profiles = list(read_profiles())
     if not profiles:
-        out('No local profiles found in "%s".' % mozilla_dir())
+        out('No local profiles found. Set a profile path with -p/--profile.')
         return
     out('%d profiles found:' % len(profiles))
     for profile in profiles:
