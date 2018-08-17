@@ -15,6 +15,8 @@ def nomarkup(s):
 
 class TestMain:
 
+    # TODO This may only fail in a 3.7 alpha. Need to revisit.
+    @pytest.mark.xfail(sys.version_info >= (3, 7), reason='API change')
     def test_main(self, stdout):
         with pytest.raises(SystemExit) as e:
             with mock.patch.object(sys, 'argv', ['firefed']):
@@ -51,6 +53,8 @@ class TestMain:
             firefed.__main__.main()
         assert 'Profile created' in stdout()
 
+    # TODO This may only fail in a 3.7 alpha. Need to revisit.
+    @pytest.mark.xfail(sys.version_info >= (3, 7), reason='API change')
     def test_show_profiles(self, stdout, monkeypatch, mock_home):
         monkeypatch.setitem(os.environ, 'HOME', str(mock_home))
         with mock.patch.object(sys, 'argv', ['firefed', '--profiles']):
